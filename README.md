@@ -10,6 +10,7 @@ A complete .NET solution that implements functional processing of use cases usin
 - ✅ **Advanced ExecutionResult Pattern**: Sophisticated functional approach with both generic and non-generic variants
 - 🛡️ **Rich Error Handling**: ExecutionError with multiple messages, error codes, and log levels
 - 🔄 **Implicit Conversions**: Seamless conversion between values and ExecutionResult
+- ➕ **Result Combination**: Combine multiple ExecutionResult objects using the `+` operator or `Combine()` method
 - 🧪 **Testable**: Easy to unit test individual use cases with comprehensive error scenarios
 - 📦 **Enterprise-Ready**: Robust implementation with logging integration and cancellation support
 
@@ -207,6 +208,23 @@ ExecutionResult<string> result = "Hello World";
 
 // Explicit failure creation
 var failure = Execution.Failure<string>("Something went wrong");
+```
+
+### Combining Results
+```csharp
+// Using the + operator (new feature)
+var result1 = Execution.Success();
+var result2 = Execution.Failure("Something went wrong");
+var combined = result1 + result2; // Will be failure with error message
+
+// Multiple operations
+var success1 = Execution.Success("Value1");
+var success2 = Execution.Success("Value2");
+var failure1 = Execution.Failure<string>("Error1");
+var allCombined = success1 + success2 + failure1; // Will be failure with "Error1"
+
+// Using the Combine method directly
+var combined = Execution.Combine(result1, result2, result3);
 ```
 
 ### Error Handling Patterns
