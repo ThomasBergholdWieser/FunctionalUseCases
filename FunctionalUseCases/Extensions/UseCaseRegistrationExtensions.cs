@@ -32,6 +32,13 @@ public static class UseCaseRegistrationExtensions
             .AsImplementedInterfaces()
             .WithLifetime(serviceLifetime));
 
+        // Register all Pipeline Behaviors using Scrutor
+        services.Scan(scan => scan
+            .FromAssemblies(assemblies)
+            .AddClasses(classes => classes.AssignableTo(typeof(IPipelineBehavior<,>)))
+            .AsImplementedInterfaces()
+            .WithLifetime(serviceLifetime));
+
         return services;
     }
 

@@ -19,7 +19,7 @@ public class UseCaseDispatcher : IUseCaseDispatcher
     }
 
     /// <summary>
-    /// Executes a use case by resolving the appropriate handler.
+    /// Executes a use case by resolving the appropriate handler and running it through the pipeline behaviors.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
     /// <param name="useCaseParameter">The use case parameter to execute.</param>
@@ -44,20 +44,51 @@ public class UseCaseDispatcher : IUseCaseDispatcher
                 return Execution.Failure<TResult>($"No use case registered for parameter type '{useCaseParameterType.Name}'");
             }
 
-            var executeMethod = useCaseType.GetMethod("ExecuteAsync");
-            if (executeMethod == null)
+            // Get all pipeline behaviors for this use case parameter and result type
+            var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
+            var behaviors = _serviceProvider.GetServices(behaviorType).ToArray();
+
+            // Build the pipeline by chaining behaviors
+            PipelineBehaviorDelegate<TResult> pipeline = async () =>
             {
-                return Execution.Failure<TResult>($"ExecuteAsync method not found on use case for parameter type '{useCaseParameterType.Name}'");
+                var executeMethod = useCaseType.GetMethod("ExecuteAsync");
+                if (executeMethod == null)
+                {
+                    return Execution.Failure<TResult>($"ExecuteAsync method not found on use case for parameter type '{useCaseParameterType.Name}'");
+                }
+
+                // Use reflection to call ExecuteAsync
+                var task = (Task<ExecutionResult<TResult>>?)executeMethod.Invoke(useCase, new object[] { useCaseParameter, cancellationToken });
+                if (task == null)
+                {
+                    return Execution.Failure<TResult>($"ExecuteAsync method returned null for parameter type '{useCaseParameterType.Name}'");
+                }
+
+                return await task.ConfigureAwait(false);
+            };
+
+            // Wrap the pipeline with behaviors in reverse order (so they execute in registration order)
+            for (int i = behaviors.Length - 1; i >= 0; i--)
+            {
+                var behavior = behaviors[i];
+                var currentPipeline = pipeline;
+
+                // Create a new pipeline that wraps the current one with this behavior
+                pipeline = () =>
+                {
+                    var handleMethod = behaviorType.GetMethod("HandleAsync");
+                    if (handleMethod == null)
+                    {
+                        return currentPipeline();
+                    }
+
+                    var task = (Task<ExecutionResult<TResult>>?)handleMethod.Invoke(behavior, new object[] { useCaseParameter, currentPipeline, cancellationToken });
+                    return task ?? currentPipeline();
+                };
             }
 
-            // Use reflection to call ExecuteAsync
-            var task = (Task<ExecutionResult<TResult>>?)executeMethod.Invoke(useCase, new object[] { useCaseParameter, cancellationToken });
-            if (task == null)
-            {
-                return Execution.Failure<TResult>($"ExecuteAsync method returned null for parameter type '{useCaseParameterType.Name}'");
-            }
-
-            var result = await task.ConfigureAwait(false);
+            // Execute the complete pipeline
+            var result = await pipeline().ConfigureAwait(false);
             return result;
         }
         catch (Exception ex)
