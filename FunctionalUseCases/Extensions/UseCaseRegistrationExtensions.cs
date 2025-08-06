@@ -10,6 +10,8 @@ public static class UseCaseRegistrationExtensions
 {
     /// <summary>
     /// Registers the UseCase dispatcher and automatically discovers and registers all UseCases in the specified assemblies.
+    /// Note: Execution behaviors are NOT automatically registered. Register execution behaviors using standard DI registration:
+    /// services.AddScoped(typeof(IExecutionBehavior&lt;,&gt;), typeof(MyExecutionBehavior&lt;,&gt;));
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="assemblies">The assemblies to scan for UseCases. If null, scans the calling assembly.</param>
@@ -37,6 +39,8 @@ public static class UseCaseRegistrationExtensions
 
     /// <summary>
     /// Registers the UseCase dispatcher and automatically discovers and registers all UseCases in the current assembly.
+    /// Note: Execution behaviors are NOT automatically registered. Register execution behaviors using standard DI registration:
+    /// services.AddScoped(typeof(IExecutionBehavior&lt;,&gt;), typeof(MyExecutionBehavior&lt;,&gt;));
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="serviceLifetime">The service lifetime for the use cases. Default is Transient.</param>
@@ -49,6 +53,8 @@ public static class UseCaseRegistrationExtensions
 
     /// <summary>
     /// Registers the UseCase dispatcher and automatically discovers and registers all UseCases in the assembly containing the specified type.
+    /// Note: Execution behaviors are NOT automatically registered. Register execution behaviors using standard DI registration:
+    /// services.AddScoped(typeof(IExecutionBehavior&lt;,&gt;), typeof(MyExecutionBehavior&lt;,&gt;));
     /// </summary>
     /// <typeparam name="T">A type from the assembly to scan.</typeparam>
     /// <param name="services">The service collection.</param>

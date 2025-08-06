@@ -1,12 +1,20 @@
 ﻿using FunctionalUseCases;
 using FunctionalUseCases.Sample;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 // Create service collection and register UseCase services
 var services = new ServiceCollection();
 
+// Add logging services
+services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
 // Register UseCase services using our extension method
 services.AddUseCasesFromAssemblyContaining<SampleUseCase>();
+
+// Register execution behaviors using standard DI registration - they will execute in the order they are resolved by the DI container
+services.AddScoped(typeof(IExecutionBehavior<,>), typeof(TimingBehavior<,>));
+services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
 
 // Build service provider
 var serviceProvider = services.BuildServiceProvider();
@@ -14,7 +22,7 @@ var serviceProvider = services.BuildServiceProvider();
 // Get the dispatcher
 var dispatcher = serviceProvider.GetRequiredService<IUseCaseDispatcher>();
 
-Console.WriteLine("=== FunctionalUseCases Sample Application ===\n");
+Console.WriteLine("=== FunctionalUseCases Sample Application with Execution Behaviors ===\n");
 
 // Example 1: Successful use case execution
 Console.WriteLine("Example 1: Successful execution");
@@ -68,4 +76,6 @@ if (!string.IsNullOrEmpty(name))
     }
 }
 
+Console.WriteLine("\nNote: Execution behaviors (TimingBehavior, LoggingBehavior) are registered using");
+Console.WriteLine("services.AddScoped(typeof(IExecutionBehavior<,>), typeof(MyBehavior<,>)) for generic registration.");
 Console.WriteLine("\nDone!");
