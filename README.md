@@ -12,6 +12,7 @@ A complete .NET solution that implements functional processing of use cases usin
 - 🔄 **Implicit Conversions**: Seamless conversion between values and ExecutionResult
 - 🧪 **Testable**: Easy to unit test individual use cases with comprehensive error scenarios
 - 📦 **Enterprise-Ready**: Robust implementation with logging integration and cancellation support
+- 🔗 **Pipeline Behaviors**: Cross-cutting concerns like logging, validation, caching, and performance monitoring through a clean pipeline pattern
 
 ## Installation
 
@@ -180,6 +181,148 @@ public interface IUseCaseDispatcher
 
 *Located in: `FunctionalUseCases/Interfaces/IUseCaseDispatcher.cs`*
 
+## Pipeline Behaviors
+
+Pipeline behaviors allow you to implement cross-cutting concerns like logging, validation, caching, performance monitoring, and more. They wrap around use case execution in a clean, composable way.
+
+### IPipelineBehavior Interface
+
+```csharp
+public interface IPipelineBehavior<in TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
+    where TResult : notnull
+{
+    Task<ExecutionResult<TResult>> HandleAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default);
+}
+```
+
+*Located in: `FunctionalUseCases/Interfaces/IPipelineBehavior.cs`*
+
+### Creating a Pipeline Behavior
+
+```csharp
+using Microsoft.Extensions.Logging;
+
+public class LoggingBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
+    where TResult : notnull
+{
+    private readonly ILogger<LoggingBehavior<TUseCaseParameter, TResult>> _logger;
+
+    public LoggingBehavior(ILogger<LoggingBehavior<TUseCaseParameter, TResult>> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task<ExecutionResult<TResult>> HandleAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
+    {
+        var useCaseParameterName = typeof(TUseCaseParameter).Name;
+        
+        _logger.LogInformation("Starting execution of use case: {UseCaseParameterName}", useCaseParameterName);
+        
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var result = await next().ConfigureAwait(false);
+            
+            stopwatch.Stop();
+            
+            if (result.ExecutionSucceeded)
+            {
+                _logger.LogInformation("Successfully executed use case: {UseCaseParameterName} in {ElapsedMilliseconds}ms", 
+                    useCaseParameterName, stopwatch.ElapsedMilliseconds);
+            }
+            else
+            {
+                _logger.LogWarning("Use case execution failed: {UseCaseParameterName} in {ElapsedMilliseconds}ms. Error: {ErrorMessage}", 
+                    useCaseParameterName, stopwatch.ElapsedMilliseconds, result.Error?.Message);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "Exception occurred during use case execution: {UseCaseParameterName} in {ElapsedMilliseconds}ms", 
+                useCaseParameterName, stopwatch.ElapsedMilliseconds);
+            
+            return Execution.Failure<TResult>($"Exception in LoggingBehavior: {ex.Message}", ex);
+        }
+    }
+}
+```
+
+### Automatic Registration
+
+Pipeline behaviors are automatically registered when you call the registration extension methods:
+
+```csharp
+// Register use cases and behaviors from assembly
+services.AddUseCasesFromAssemblyContaining<GreetUserUseCase>();
+
+// The LoggingBehavior<TUseCaseParameter, TResult> will be automatically registered
+// and will execute for all use cases
+```
+
+### Execution Order
+
+Behaviors are executed in the order they are registered. Each behavior can execute logic before and after the next step in the pipeline:
+
+```
+Behavior 1 (before) → Behavior 2 (before) → Use Case Handler → Behavior 2 (after) → Behavior 1 (after)
+```
+
+### Common Pipeline Behavior Patterns
+
+**Validation Behavior:**
+```csharp
+public class ValidationBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
+    where TResult : notnull
+{
+    public async Task<ExecutionResult<TResult>> HandleAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
+    {
+        // Perform validation logic
+        if (/* validation fails */)
+        {
+            return Execution.Failure<TResult>("Validation failed");
+        }
+        
+        return await next().ConfigureAwait(false);
+    }
+}
+```
+
+**Caching Behavior:**
+```csharp
+public class CachingBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
+    where TResult : notnull
+{
+    private readonly IMemoryCache _cache;
+
+    public async Task<ExecutionResult<TResult>> HandleAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = $"{typeof(TUseCaseParameter).Name}_{useCaseParameter.GetHashCode()}";
+        
+        if (_cache.TryGetValue(cacheKey, out ExecutionResult<TResult> cachedResult))
+        {
+            return cachedResult;
+        }
+        
+        var result = await next().ConfigureAwait(false);
+        
+        if (result.ExecutionSucceeded)
+        {
+            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+        }
+        
+        return result;
+    }
+}
+```
+
 ## Registration Options
 
 The library provides several extension methods for registering use cases (*located in: `FunctionalUseCases/Extensions/UseCaseRegistrationExtensions.cs`*):
@@ -319,19 +462,22 @@ FunctionalUseCases/
 │   ├── Execution.cs                         # Factory methods
 │   ├── ExecutionError.cs                    # Error types
 │   ├── ExecutionException.cs                # Exception type
-│   ├── UseCaseDispatcher.cs                 # Mediator implementation
+│   ├── UseCaseDispatcher.cs                 # Mediator implementation with pipeline support
+│   ├── PipelineBehaviorDelegate.cs           # Pipeline behavior delegate type
 │   ├── Interfaces/                          # All interfaces
 │   │   ├── IUseCase.cs                      # Use case parameter interfaces
 │   │   ├── IUseCaseHandler.cs               # Use case implementation interface
-│   │   └── IUseCaseDispatcher.cs            # Dispatcher interface
+│   │   ├── IUseCaseDispatcher.cs            # Dispatcher interface
+│   │   └── IPipelineBehavior.cs             # Pipeline behavior interface
 │   ├── Extensions/                          # Extension methods
 │   │   ├── ExecutionResultExtensions.cs     # Logging & utility extensions
-│   │   └── UseCaseRegistrationExtensions.cs # DI extensions
+│   │   └── UseCaseRegistrationExtensions.cs # DI extensions with behavior registration
 │   └── Sample/                              # Sample implementation
 │       ├── SampleUseCase.cs                 # Example use case parameter
-│       └── SampleUseCaseHandler.cs          # Example use case implementation
+│       ├── SampleUseCaseHandler.cs          # Example use case implementation
+│       └── LoggingBehavior.cs               # Example pipeline behavior
 ├── Sample/                                   # Console application
-│   └── Program.cs                           # Demo application
+│   └── Program.cs                           # Demo application with pipeline behaviors
 └── README.md                                # This file
 ```
 
@@ -348,6 +494,22 @@ cd Sample && dotnet run
 dotnet test
 ```
 
+**Sample Output with Pipeline Behaviors:**
+
+```
+=== FunctionalUseCases Sample Application with Pipeline Behaviors ===
+
+Example 1: Successful execution
+info: Starting execution of use case: SampleUseCase -> String
+info: Successfully executed use case: SampleUseCase -> String in 104ms
+✅ Success: Hello, World! Welcome to FunctionalUseCases.
+
+Example 2: Failed execution (empty name)
+info: Starting execution of use case: SampleUseCase -> String
+warn: Use case execution failed: SampleUseCase -> String in 101ms. Error: Name cannot be empty or whitespace
+❌ Error: Name cannot be empty or whitespace
+```
+
 ## Best Practices
 
 1. **Keep Use Case Parameters Simple**: Each use case parameter should represent a single business operation's input data
@@ -358,15 +520,19 @@ dotnet test
 6. **Cancellation Support**: Support cancellation tokens for responsive applications
 7. **Meaningful Names**: Use descriptive names that clearly indicate the business operation being performed
 8. **Single Responsibility**: Each use case should handle one specific business scenario
+9. **Pipeline Behaviors**: Use behaviors for cross-cutting concerns rather than cluttering use case implementations
+10. **Behavior Ordering**: Consider the order of behavior registration as it affects execution order
 
 ## Interface Naming
 
 The library uses clear, intent-revealing interface names:
 - **IUseCaseParameter**: Represents the data/parameters for a use case
 - **IUseCase**: Represents the actual use case implementation/logic
+- **IPipelineBehavior**: Represents cross-cutting behavior that wraps use case execution
 - **ExecuteAsync**: Method name that clearly indicates execution of business logic
+- **HandleAsync**: Method name for pipeline behavior processing
 
-This naming convention follows the principle that parameters define what data is needed, while use cases define how that data is processed.
+This naming convention follows the principle that parameters define what data is needed, while use cases define how that data is processed, and behaviors define how execution is enhanced.
 
 ## Dependencies
 
