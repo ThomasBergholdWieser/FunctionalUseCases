@@ -1,17 +1,17 @@
 namespace FunctionalUseCases;
 
 /// <summary>
-/// Marker interface for use cases.
-/// All use cases should implement this interface to be recognized by the UseCase dispatcher.
+/// Marker interface for use case parameters.
+/// All use case parameters should implement this interface to be recognized by the UseCase dispatcher.
 /// </summary>
-public interface IUseCase
+public interface IUseCaseParameter
 {
 }
 
 /// <summary>
-/// Generic interface for use cases that return a result.
+/// Generic interface for use case parameters that define the result type.
 /// </summary>
 /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
-public interface IUseCase<out TResult> : IUseCase
+public interface IUseCaseParameter<out TResult> : IUseCaseParameter
 {
 }

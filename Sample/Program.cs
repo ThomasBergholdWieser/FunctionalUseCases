@@ -19,7 +19,7 @@ Console.WriteLine("=== FunctionalUseCases Sample Application ===\n");
 // Example 1: Successful use case execution
 Console.WriteLine("Example 1: Successful execution");
 var successUseCase = new SampleUseCase("World");
-var successResult = await dispatcher.DispatchAsync(successUseCase);
+var successResult = await dispatcher.ExecuteAsync(successUseCase);
 
 if (successResult.ExecutionSucceeded)
 {
@@ -35,7 +35,7 @@ Console.WriteLine();
 // Example 2: Failed use case execution (empty name)
 Console.WriteLine("Example 2: Failed execution (empty name)");
 var failUseCase = new SampleUseCase("");
-var failResult = await dispatcher.DispatchAsync(failUseCase);
+var failResult = await dispatcher.ExecuteAsync(failUseCase);
 
 if (failResult.ExecutionSucceeded)
 {
@@ -56,7 +56,7 @@ var name = Console.ReadLine();
 if (!string.IsNullOrEmpty(name))
 {
     var interactiveUseCase = new SampleUseCase(name);
-    var interactiveResult = await dispatcher.DispatchAsync(interactiveUseCase);
+    var interactiveResult = await dispatcher.ExecuteAsync(interactiveUseCase);
 
     if (interactiveResult.ExecutionSucceeded)
     {

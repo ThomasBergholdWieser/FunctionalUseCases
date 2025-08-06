@@ -8,13 +8,13 @@ namespace FunctionalUseCases;
 public interface IUseCaseDispatcher
 {
     /// <summary>
-    /// Dispatches a use case for execution.
+    /// Executes a use case.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
-    /// <param name="useCase">The use case to execute.</param>
+    /// <param name="useCaseParameter">The use case parameter to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An ExecutionResult containing the result or error information.</returns>
-    Task<ExecutionResult<TResult>> DispatchAsync<TResult>(IUseCase<TResult> useCase, CancellationToken cancellationToken = default)
+    Task<ExecutionResult<TResult>> ExecuteAsync<TResult>(IUseCaseParameter<TResult> useCaseParameter, CancellationToken cancellationToken = default)
         where TResult : notnull;
 }
 
@@ -35,42 +35,42 @@ public class UseCaseDispatcher : IUseCaseDispatcher
     }
 
     /// <summary>
-    /// Dispatches a use case for execution by resolving the appropriate handler.
+    /// Executes a use case by resolving the appropriate handler.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
-    /// <param name="useCase">The use case to execute.</param>
+    /// <param name="useCaseParameter">The use case parameter to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An ExecutionResult containing the result or error information.</returns>
-    public async Task<ExecutionResult<TResult>> DispatchAsync<TResult>(IUseCase<TResult> useCase, CancellationToken cancellationToken = default)
+    public async Task<ExecutionResult<TResult>> ExecuteAsync<TResult>(IUseCaseParameter<TResult> useCaseParameter, CancellationToken cancellationToken = default)
         where TResult : notnull
     {
-        if (useCase == null)
+        if (useCaseParameter == null)
         {
-            throw new ArgumentNullException(nameof(useCase));
+            throw new ArgumentNullException(nameof(useCaseParameter));
         }
 
         try
         {
-            var useCaseType = useCase.GetType();
-            var handlerType = typeof(IUseCaseHandler<,>).MakeGenericType(useCaseType, typeof(TResult));
+            var useCaseParameterType = useCaseParameter.GetType();
+            var useCaseType = typeof(IUseCase<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
             
-            var handler = _serviceProvider.GetService(handlerType);
-            if (handler == null)
+            var useCase = _serviceProvider.GetService(useCaseType);
+            if (useCase == null)
             {
-                return Execution.Failure<TResult>($"No handler registered for use case type '{useCaseType.Name}'");
+                return Execution.Failure<TResult>($"No use case registered for parameter type '{useCaseParameterType.Name}'");
             }
 
-            var handleMethod = handlerType.GetMethod("HandleAsync");
-            if (handleMethod == null)
+            var executeMethod = useCaseType.GetMethod("ExecuteAsync");
+            if (executeMethod == null)
             {
-                return Execution.Failure<TResult>($"HandleAsync method not found on handler for use case type '{useCaseType.Name}'");
+                return Execution.Failure<TResult>($"ExecuteAsync method not found on use case for parameter type '{useCaseParameterType.Name}'");
             }
 
-            // Use reflection to call HandleAsync
-            var task = (Task<ExecutionResult<TResult>>?)handleMethod.Invoke(handler, new object[] { useCase, cancellationToken });
+            // Use reflection to call ExecuteAsync
+            var task = (Task<ExecutionResult<TResult>>?)executeMethod.Invoke(useCase, new object[] { useCaseParameter, cancellationToken });
             if (task == null)
             {
-                return Execution.Failure<TResult>($"HandleAsync method returned null for use case type '{useCaseType.Name}'");
+                return Execution.Failure<TResult>($"ExecuteAsync method returned null for parameter type '{useCaseParameterType.Name}'");
             }
 
             var result = await task.ConfigureAwait(false);
@@ -78,7 +78,7 @@ public class UseCaseDispatcher : IUseCaseDispatcher
         }
         catch (Exception ex)
         {
-            return Execution.Failure<TResult>($"Error dispatching use case: {ex.Message}", ex);
+            return Execution.Failure<TResult>($"Error executing use case: {ex.Message}", ex);
         }
     }
 }

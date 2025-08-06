@@ -1,19 +1,19 @@
 namespace FunctionalUseCases;
 
 /// <summary>
-/// Generic handler interface for use cases that return ExecutionResult.
+/// Generic use case interface that handles execution and returns ExecutionResult.
 /// </summary>
-/// <typeparam name="TUseCase">The type of use case to handle.</typeparam>
+/// <typeparam name="TUseCaseParameter">The type of use case parameter to handle.</typeparam>
 /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
-public interface IUseCaseHandler<in TUseCase, TResult>
-    where TUseCase : IUseCase<TResult>
+public interface IUseCase<in TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
     where TResult : notnull
 {
     /// <summary>
-    /// Handles the execution of the use case.
+    /// Executes the use case.
     /// </summary>
-    /// <param name="useCase">The use case to handle.</param>
+    /// <param name="useCaseParameter">The use case parameter to handle.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An ExecutionResult containing the result or error information.</returns>
-    Task<ExecutionResult<TResult>> HandleAsync(TUseCase useCase, CancellationToken cancellationToken = default);
+    Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, CancellationToken cancellationToken = default);
 }

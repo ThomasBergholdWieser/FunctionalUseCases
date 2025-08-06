@@ -1,18 +1,18 @@
 namespace FunctionalUseCases.Sample;
 
 /// <summary>
-/// Sample handler that handles the SampleUseCase.
-/// Demonstrates how to implement a UseCase handler with business logic.
+/// Sample use case that handles the SampleUseCase parameter.
+/// Demonstrates how to implement a UseCase with business logic.
 /// </summary>
-public class SampleUseCaseHandler : IUseCaseHandler<SampleUseCase, string>
+public class SampleUseCaseHandler : IUseCase<SampleUseCase, string>
 {
     /// <summary>
-    /// Handles the SampleUseCase by creating a greeting message.
+    /// Executes the SampleUseCase by creating a greeting message.
     /// </summary>
-    /// <param name="useCase">The SampleUseCase to handle.</param>
+    /// <param name="useCaseParameter">The SampleUseCase parameter to handle.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An ExecutionResult containing the greeting message or error information.</returns>
-    public async Task<ExecutionResult<string>> HandleAsync(SampleUseCase useCase, CancellationToken cancellationToken = default)
+    public async Task<ExecutionResult<string>> ExecuteAsync(SampleUseCase useCaseParameter, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -20,13 +20,13 @@ public class SampleUseCaseHandler : IUseCaseHandler<SampleUseCase, string>
             await Task.Delay(100, cancellationToken);
 
             // Validate input
-            if (string.IsNullOrWhiteSpace(useCase.Name))
+            if (string.IsNullOrWhiteSpace(useCaseParameter.Name))
             {
                 return Execution.Failure<string>("Name cannot be empty or whitespace");
             }
 
             // Business logic
-            var greeting = $"Hello, {useCase.Name}! Welcome to FunctionalUseCases.";
+            var greeting = $"Hello, {useCaseParameter.Name}! Welcome to FunctionalUseCases.";
             
             return Execution.Success(greeting);
         }

@@ -1,10 +1,10 @@
 namespace FunctionalUseCases.Sample;
 
 /// <summary>
-/// Sample use case that demonstrates the UseCase pattern implementation.
-/// This use case takes a name and returns a greeting message.
+/// Sample use case parameter that demonstrates the UseCase pattern implementation.
+/// This use case parameter contains a name for generating a greeting message.
 /// </summary>
-public class SampleUseCase : IUseCase<string>
+public class SampleUseCase : IUseCaseParameter<string>
 {
     /// <summary>
     /// Gets the name to greet.
