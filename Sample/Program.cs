@@ -21,13 +21,13 @@ Console.WriteLine("Example 1: Successful execution");
 var successUseCase = new SampleUseCase("World");
 var successResult = await dispatcher.DispatchAsync(successUseCase);
 
-if (successResult.IsSuccess)
+if (successResult.ExecutionSucceeded)
 {
-    Console.WriteLine($"✅ Success: {successResult.Value}");
+    Console.WriteLine($"✅ Success: {successResult.CheckedValue}");
 }
 else
 {
-    Console.WriteLine($"❌ Error: {successResult.ErrorMessage}");
+    Console.WriteLine($"❌ Error: {successResult.Error?.Message}");
 }
 
 Console.WriteLine();
@@ -37,13 +37,13 @@ Console.WriteLine("Example 2: Failed execution (empty name)");
 var failUseCase = new SampleUseCase("");
 var failResult = await dispatcher.DispatchAsync(failUseCase);
 
-if (failResult.IsSuccess)
+if (failResult.ExecutionSucceeded)
 {
-    Console.WriteLine($"✅ Success: {failResult.Value}");
+    Console.WriteLine($"✅ Success: {failResult.CheckedValue}");
 }
 else
 {
-    Console.WriteLine($"❌ Error: {failResult.ErrorMessage}");
+    Console.WriteLine($"❌ Error: {failResult.Error?.Message}");
 }
 
 Console.WriteLine();
@@ -58,13 +58,13 @@ if (!string.IsNullOrEmpty(name))
     var interactiveUseCase = new SampleUseCase(name);
     var interactiveResult = await dispatcher.DispatchAsync(interactiveUseCase);
 
-    if (interactiveResult.IsSuccess)
+    if (interactiveResult.ExecutionSucceeded)
     {
-        Console.WriteLine($"✅ {interactiveResult.Value}");
+        Console.WriteLine($"✅ {interactiveResult.CheckedValue}");
     }
     else
     {
-        Console.WriteLine($"❌ Error: {interactiveResult.ErrorMessage}");
+        Console.WriteLine($"❌ Error: {interactiveResult.Error?.Message}");
     }
 }
 

@@ -22,21 +22,21 @@ public class SampleUseCaseHandler : IUseCaseHandler<SampleUseCase, string>
             // Validate input
             if (string.IsNullOrWhiteSpace(useCase.Name))
             {
-                return ExecutionResult<string>.Failure("Name cannot be empty or whitespace");
+                return Execution.Failure<string>("Name cannot be empty or whitespace");
             }
 
             // Business logic
             var greeting = $"Hello, {useCase.Name}! Welcome to FunctionalUseCases.";
             
-            return ExecutionResult<string>.Success(greeting);
+            return Execution.Success(greeting);
         }
         catch (OperationCanceledException)
         {
-            return ExecutionResult<string>.Failure("Operation was cancelled");
+            return Execution.Failure<string>("Operation was cancelled");
         }
         catch (Exception ex)
         {
-            return ExecutionResult<string>.Failure("An error occurred while processing the greeting", ex);
+            return Execution.Failure<string>("An error occurred while processing the greeting", ex);
         }
     }
 }

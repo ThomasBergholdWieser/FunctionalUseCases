@@ -14,7 +14,8 @@ public interface IUseCaseDispatcher
     /// <param name="useCase">The use case to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An ExecutionResult containing the result or error information.</returns>
-    Task<ExecutionResult<TResult>> DispatchAsync<TResult>(IUseCase<TResult> useCase, CancellationToken cancellationToken = default);
+    Task<ExecutionResult<TResult>> DispatchAsync<TResult>(IUseCase<TResult> useCase, CancellationToken cancellationToken = default)
+        where TResult : notnull;
 }
 
 /// <summary>
@@ -41,6 +42,7 @@ public class UseCaseDispatcher : IUseCaseDispatcher
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An ExecutionResult containing the result or error information.</returns>
     public async Task<ExecutionResult<TResult>> DispatchAsync<TResult>(IUseCase<TResult> useCase, CancellationToken cancellationToken = default)
+        where TResult : notnull
     {
         if (useCase == null)
         {
@@ -55,33 +57,28 @@ public class UseCaseDispatcher : IUseCaseDispatcher
             var handler = _serviceProvider.GetService(handlerType);
             if (handler == null)
             {
-                return ExecutionResult<TResult>.Failure($"No handler registered for use case type '{useCaseType.Name}'");
+                return Execution.Failure<TResult>($"No handler registered for use case type '{useCaseType.Name}'");
             }
 
             var handleMethod = handlerType.GetMethod("HandleAsync");
             if (handleMethod == null)
             {
-                return ExecutionResult<TResult>.Failure($"HandleAsync method not found on handler for use case type '{useCaseType.Name}'");
+                return Execution.Failure<TResult>($"HandleAsync method not found on handler for use case type '{useCaseType.Name}'");
             }
 
-
-            var handler = _serviceProvider.GetService(handlerType);
-            if (handler == null)
+            // Use reflection to call HandleAsync
+            var task = (Task<ExecutionResult<TResult>>?)handleMethod.Invoke(handler, new object[] { useCase, cancellationToken });
+            if (task == null)
             {
-                return ExecutionResult<TResult>.Failure($"No handler registered for use case type '{useCaseType.Name}'");
+                return Execution.Failure<TResult>($"HandleAsync method returned null for use case type '{useCaseType.Name}'");
             }
 
-            // Use compiled delegate instead of reflection
-            var key = (handlerType, useCaseType, typeof(TResult));
-            var handleAsyncDelegate = _handleAsyncDelegateCache.GetOrAdd(key, _ => CreateHandleAsyncDelegate(handlerType, useCaseType, typeof(TResult)));
-
-            var taskObj = handleAsyncDelegate(handler, useCase, cancellationToken);
-            var result = await (Task<ExecutionResult<TResult>>)taskObj.ConfigureAwait(false);
+            var result = await task.ConfigureAwait(false);
             return result;
         }
         catch (Exception ex)
         {
-            return ExecutionResult<TResult>.Failure($"Error dispatching use case: {ex.Message}", ex);
+            return Execution.Failure<TResult>($"Error dispatching use case: {ex.Message}", ex);
         }
     }
 }

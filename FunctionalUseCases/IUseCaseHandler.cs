@@ -7,6 +7,7 @@ namespace FunctionalUseCases;
 /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
 public interface IUseCaseHandler<in TUseCase, TResult>
     where TUseCase : IUseCase<TResult>
+    where TResult : notnull
 {
     /// <summary>
     /// Handles the execution of the use case.
