@@ -16,6 +16,9 @@ public record ExecutionResult<T>(ExecutionError? Error = null) : ExecutionResult
 
     public override string ToString() =>
         this.ExecutionSucceeded ? nameof(this.ExecutionSucceeded) : nameof(this.ExecutionFailed) + ": " + this.Error;
+
+    public static ExecutionResult operator +(ExecutionResult<T> left, ExecutionResult right) =>
+        Execution.Combine(left, right);
 }
 
 public record ExecutionResult(ExecutionError? Error = null)
@@ -47,4 +50,7 @@ public record ExecutionResult(ExecutionError? Error = null)
 		    ? BuildInternalMessage()
 		    : exceptionMessage + ": " + BuildInternalMessage());
     }
+
+    public static ExecutionResult operator +(ExecutionResult left, ExecutionResult right) =>
+        Execution.Combine(left, right);
 }
