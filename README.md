@@ -556,12 +556,34 @@ The library uses clear, intent-revealing interface names:
 
 This naming convention follows the principle that parameters define what data is needed, while use cases define how that data is processed, and behaviors define how execution is enhanced.
 
+## Versioning
+
+This library uses **semantic versioning** powered by [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning):
+
+- 🏷️ **Automatic Version Generation**: Versions are automatically generated based on Git history
+- 📦 **NuGet Package Versioning**: Packages are versioned consistently across builds
+- 🔍 **Runtime Version Access**: Version information is available at runtime via assembly attributes
+- 🚀 **CI/CD Ready**: Integrates seamlessly with build pipelines
+
+### Version Information Access
+
+```csharp
+// Access version information at runtime
+var assembly = typeof(Execution).Assembly;
+var version = assembly.GetName().Version;
+var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+// Example output: "1.0.1+136a4d399f" (includes Git commit hash)
+Console.WriteLine($"Library Version: {informationalVersion}");
+```
+
 ## Dependencies
 
 - **.NET 8.0** or later
 - **Microsoft.Extensions.DependencyInjection** (8.0.1)
 - **Microsoft.Extensions.Logging.Abstractions** (8.0.1) - For rich error handling and logging
 - **Scrutor** (5.0.1) - For automatic service registration
+- **Nerdbank.GitVersioning** (3.7.115) - For semantic versioning
 
 ## License
 
