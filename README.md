@@ -105,6 +105,8 @@ public interface IUseCaseParameter<out TResult> : IUseCaseParameter
 }
 ```
 
+*Located in: `FunctionalUseCases/Interfaces/IUseCase.cs`*
+
 ### IUseCase Interface
 
 Generic interface for use case implementations that process use case parameters:
@@ -117,6 +119,8 @@ public interface IUseCase<in TUseCaseParameter, TResult>
     Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, CancellationToken cancellationToken = default);
 }
 ```
+
+*Located in: `FunctionalUseCases/Interfaces/IUseCaseHandler.cs`*
 
 ### ExecutionResult<T> and ExecutionResult
 
@@ -174,9 +178,11 @@ public interface IUseCaseDispatcher
 }
 ```
 
+*Located in: `FunctionalUseCases/Interfaces/IUseCaseDispatcher.cs`*
+
 ## Registration Options
 
-The library provides several extension methods for registering use cases:
+The library provides several extension methods for registering use cases (*located in: `FunctionalUseCases/Extensions/UseCaseRegistrationExtensions.cs`*):
 
 ```csharp
 // Register from specific assemblies
@@ -309,16 +315,18 @@ else
 FunctionalUseCases/
 ├── FunctionalUseCases.sln                    # Solution file
 ├── FunctionalUseCases/                       # Main library
-│   ├── IUseCase.cs                          # Use case parameter interfaces
-│   ├── IUseCaseHandler.cs                   # Use case implementation interface
 │   ├── ExecutionResult.cs                   # Result types (generic & non-generic)
 │   ├── Execution.cs                         # Factory methods
 │   ├── ExecutionError.cs                    # Error types
 │   ├── ExecutionException.cs                # Exception type
 │   ├── UseCaseDispatcher.cs                 # Mediator implementation
-│   ├── UseCaseRegistrationExtensions.cs     # DI extensions
-│   ├── Extensions/
-│   │   └── ExecutionResultExtensions.cs     # Logging & utility extensions
+│   ├── Interfaces/                          # All interfaces
+│   │   ├── IUseCase.cs                      # Use case parameter interfaces
+│   │   ├── IUseCaseHandler.cs               # Use case implementation interface
+│   │   └── IUseCaseDispatcher.cs            # Dispatcher interface
+│   ├── Extensions/                          # Extension methods
+│   │   ├── ExecutionResultExtensions.cs     # Logging & utility extensions
+│   │   └── UseCaseRegistrationExtensions.cs # DI extensions
 │   └── Sample/                              # Sample implementation
 │       ├── SampleUseCase.cs                 # Example use case parameter
 │       └── SampleUseCaseHandler.cs          # Example use case implementation
