@@ -12,6 +12,15 @@ services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Inf
 // Register UseCase services using our extension method
 services.AddUseCasesFromAssemblyContaining<SampleUseCase>();
 
+// Register pipeline behaviors in explicit order - they will execute in this order:
+// 1. TimingBehavior (outer wrapper)
+// 2. LoggingBehavior (inner wrapper)
+services.AddPipelineBehaviors(new[] 
+{ 
+    typeof(TimingBehavior<SampleUseCase, string>),
+    typeof(LoggingBehavior<SampleUseCase, string>)
+});
+
 // Build service provider
 var serviceProvider = services.BuildServiceProvider();
 
@@ -72,6 +81,6 @@ if (!string.IsNullOrEmpty(name))
     }
 }
 
-Console.WriteLine("\nNote: The LoggingBehavior is now automatically registered and will log");
-Console.WriteLine("timing and execution details for all use cases to the console.");
+Console.WriteLine("\nNote: Pipeline behaviors (TimingBehavior -> LoggingBehavior) are explicitly registered");
+Console.WriteLine("with AddPipelineBehaviors in the desired execution order.");
 Console.WriteLine("\nDone!");
