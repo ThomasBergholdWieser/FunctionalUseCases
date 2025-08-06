@@ -188,8 +188,8 @@ services.AddUseCasesFromAssembly();
 // Register from assembly containing a specific type
 services.AddUseCasesFromAssemblyContaining<MyUseCaseParameter>();
 
-// Specify service lifetime (default is Scoped)
-services.AddUseCasesFromAssembly(ServiceLifetime.Transient);
+// Specify service lifetime (default is Transient)
+services.AddUseCasesFromAssembly(ServiceLifetime.Scoped);
 ```
 
 ## Advanced ExecutionResult Features
