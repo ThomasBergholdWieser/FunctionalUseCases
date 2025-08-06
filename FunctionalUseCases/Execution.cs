@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Text.RegularExpressions;
 
 namespace FunctionalUseCases;
 
@@ -49,9 +47,6 @@ public static class Execution
         results.All(x => x.ExecutionSucceeded)
             ? Success()
             : Failure(ConcatMessages(results), ConcatErrorCode(results));
-
-    public static string ToStatusCodeText(HttpStatusCode statusCode) =>
-        Regex.Replace(statusCode.ToString(), "(?<=[a-z])([A-Z])", " $1", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
 
     private static ExecutionResult<T> Failure<T>(IEnumerable<string> messages, bool logged, int? errorCode, LogLevel logLevel) where T : notnull =>
 	    new(new ExecutionError(messages) { ErrorCode = errorCode, LogLevel = logLevel, Logged = logged });
