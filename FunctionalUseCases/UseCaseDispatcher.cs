@@ -64,7 +64,19 @@ public class UseCaseDispatcher : IUseCaseDispatcher
                 return ExecutionResult<TResult>.Failure($"HandleAsync method not found on handler for use case type '{useCaseType.Name}'");
             }
 
-            var result = await (Task<ExecutionResult<TResult>>)handleMethod.Invoke(handler, new object[] { useCase, cancellationToken })!;
+
+            var handler = _serviceProvider.GetService(handlerType);
+            if (handler == null)
+            {
+                return ExecutionResult<TResult>.Failure($"No handler registered for use case type '{useCaseType.Name}'");
+            }
+
+            // Use compiled delegate instead of reflection
+            var key = (handlerType, useCaseType, typeof(TResult));
+            var handleAsyncDelegate = _handleAsyncDelegateCache.GetOrAdd(key, _ => CreateHandleAsyncDelegate(handlerType, useCaseType, typeof(TResult)));
+
+            var taskObj = handleAsyncDelegate(handler, useCase, cancellationToken);
+            var result = await (Task<ExecutionResult<TResult>>)taskObj.ConfigureAwait(false);
             return result;
         }
         catch (Exception ex)
