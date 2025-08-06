@@ -3,12 +3,12 @@ using Microsoft.Extensions.Logging;
 namespace FunctionalUseCases.Sample;
 
 /// <summary>
-/// Sample pipeline behavior that measures execution time.
+/// Sample execution behavior that measures execution time.
 /// Demonstrates how multiple behaviors can be chained together.
 /// </summary>
 /// <typeparam name="TUseCaseParameter">The type of use case parameter being handled.</typeparam>
 /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
-public class TimingBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUseCaseParameter, TResult>
+public class TimingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TUseCaseParameter, TResult>
     where TUseCaseParameter : IUseCaseParameter<TResult>
     where TResult : notnull
 {
@@ -19,7 +19,7 @@ public class TimingBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUse
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<ExecutionResult<TResult>> HandleAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
+    public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
     {
         var useCaseParameterName = typeof(TUseCaseParameter).Name;
         

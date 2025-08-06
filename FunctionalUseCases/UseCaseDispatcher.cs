@@ -44,8 +44,8 @@ public class UseCaseDispatcher : IUseCaseDispatcher
                 return Execution.Failure<TResult>($"No use case registered for parameter type '{useCaseParameterType.Name}'");
             }
 
-            // Get all pipeline behaviors for this use case parameter and result type
-            var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
+            // Get all execution behaviors for this use case parameter and result type
+            var behaviorType = typeof(IExecutionBehavior<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
             var behaviors = _serviceProvider.GetServices(behaviorType).ToArray();
 
             // Build the pipeline by chaining behaviors
@@ -76,13 +76,13 @@ public class UseCaseDispatcher : IUseCaseDispatcher
                 // Create a new pipeline that wraps the current one with this behavior
                 pipeline = () =>
                 {
-                    var handleMethod = behaviorType.GetMethod("HandleAsync");
-                    if (handleMethod == null)
+                    var executeMethod = behaviorType.GetMethod("ExecuteAsync");
+                    if (executeMethod == null)
                     {
                         return currentPipeline();
                     }
 
-                    var task = (Task<ExecutionResult<TResult>>?)handleMethod.Invoke(behavior, new object[] { useCaseParameter, currentPipeline, cancellationToken });
+                    var task = (Task<ExecutionResult<TResult>>?)executeMethod.Invoke(behavior, new object[] { useCaseParameter, currentPipeline, cancellationToken });
                     return task ?? currentPipeline();
                 };
             }

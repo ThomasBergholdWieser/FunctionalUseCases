@@ -12,14 +12,9 @@ services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Inf
 // Register UseCase services using our extension method
 services.AddUseCasesFromAssemblyContaining<SampleUseCase>();
 
-// Register pipeline behaviors in explicit order - they will execute in this order:
-// 1. TimingBehavior (outer wrapper)
-// 2. LoggingBehavior (inner wrapper)
-services.AddPipelineBehaviors(new[] 
-{ 
-    typeof(TimingBehavior<SampleUseCase, string>),
-    typeof(LoggingBehavior<SampleUseCase, string>)
-});
+// Register execution behaviors using standard DI registration - they will execute in the order they are resolved by the DI container
+services.AddScoped(typeof(IExecutionBehavior<,>), typeof(TimingBehavior<,>));
+services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
 
 // Build service provider
 var serviceProvider = services.BuildServiceProvider();
@@ -27,7 +22,7 @@ var serviceProvider = services.BuildServiceProvider();
 // Get the dispatcher
 var dispatcher = serviceProvider.GetRequiredService<IUseCaseDispatcher>();
 
-Console.WriteLine("=== FunctionalUseCases Sample Application with Pipeline Behaviors ===\n");
+Console.WriteLine("=== FunctionalUseCases Sample Application with Execution Behaviors ===\n");
 
 // Example 1: Successful use case execution
 Console.WriteLine("Example 1: Successful execution");
@@ -81,6 +76,6 @@ if (!string.IsNullOrEmpty(name))
     }
 }
 
-Console.WriteLine("\nNote: Pipeline behaviors (TimingBehavior -> LoggingBehavior) are explicitly registered");
-Console.WriteLine("with AddPipelineBehaviors in the desired execution order.");
+Console.WriteLine("\nNote: Execution behaviors (TimingBehavior, LoggingBehavior) are registered using");
+Console.WriteLine("services.AddScoped(typeof(IExecutionBehavior<,>), typeof(MyBehavior<,>)) for generic registration.");
 Console.WriteLine("\nDone!");

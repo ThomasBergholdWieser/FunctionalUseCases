@@ -3,12 +3,12 @@ using Microsoft.Extensions.Logging;
 namespace FunctionalUseCases.Sample;
 
 /// <summary>
-/// Sample pipeline behavior that logs use case execution.
+/// Sample execution behavior that logs use case execution.
 /// Demonstrates how to implement cross-cutting concerns like logging, timing, validation, etc.
 /// </summary>
 /// <typeparam name="TUseCaseParameter">The type of use case parameter being handled.</typeparam>
 /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>
-public class LoggingBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUseCaseParameter, TResult>
+public class LoggingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TUseCaseParameter, TResult>
     where TUseCaseParameter : IUseCaseParameter<TResult>
     where TResult : notnull
 {
@@ -19,7 +19,7 @@ public class LoggingBehavior<TUseCaseParameter, TResult> : IPipelineBehavior<TUs
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<ExecutionResult<TResult>> HandleAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
+    public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
     {
         var useCaseParameterName = typeof(TUseCaseParameter).Name;
         var resultTypeName = typeof(TResult).Name;
