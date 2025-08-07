@@ -13,7 +13,7 @@ A complete .NET solution that implements functional processing of use cases usin
 - ➕ **Result Combination**: Combine multiple ExecutionResult objects using the `+` operator or `Combine()` method
 - 🧪 **Testable**: Easy to unit test individual use cases with comprehensive error scenarios
 - 📦 **Enterprise-Ready**: Robust implementation with logging integration and cancellation support
-- 🔗 **Execution Behaviors**: Cross-cutting concerns like logging, validation, caching, and performance monitoring through a clean execution behavior pattern
+- 🔗 **Execution Behaviors**: Cross-cutting concerns like logging, validation, caching, transactions, and performance monitoring through a clean execution behavior pattern
 
 ## Installation
 
@@ -324,6 +324,124 @@ public class CachingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TU
     }
 }
 ```
+
+**Transaction Behavior:**
+```csharp
+public class TransactionBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
+    where TResult : notnull
+{
+    private readonly ITransactionManager _transactionManager;
+    private readonly ILogger<TransactionBehavior<TUseCaseParameter, TResult>> _logger;
+
+    public TransactionBehavior(ITransactionManager transactionManager, ILogger<TransactionBehavior<TUseCaseParameter, TResult>> logger)
+    {
+        _transactionManager = transactionManager;
+        _logger = logger;
+    }
+
+    public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
+    {
+        ITransaction? transaction = null;
+        try
+        {
+            // Begin transaction
+            transaction = await _transactionManager.BeginTransactionAsync(cancellationToken);
+            
+            // Execute the use case
+            var result = await next().ConfigureAwait(false);
+
+            if (result.ExecutionSucceeded)
+            {
+                // Commit transaction on success
+                await transaction.CommitAsync(cancellationToken);
+            }
+            else
+            {
+                // Rollback transaction on failure
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // Rollback transaction on exception
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                }
+                catch (Exception rollbackEx)
+                {
+                    _logger.LogError(rollbackEx, "Failed to rollback transaction");
+                    // Don't throw rollback exception, preserve original exception
+                }
+            }
+
+            return Execution.Failure<TResult>($"Exception in TransactionBehavior: {ex.Message}", ex);
+        }
+        finally
+        {
+            // Ensure transaction is disposed
+            transaction?.Dispose();
+        }
+    }
+}
+```
+
+To use the transaction behavior, implement the `ITransactionManager` interface for your specific database technology:
+
+```csharp
+// Example Entity Framework implementation
+public class EntityFrameworkTransactionManager : ITransactionManager
+{
+    private readonly DbContext _context;
+
+    public EntityFrameworkTransactionManager(DbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        return new EntityFrameworkTransaction(transaction);
+    }
+}
+
+public class EntityFrameworkTransaction : ITransaction
+{
+    private readonly IDbContextTransaction _transaction;
+
+    public EntityFrameworkTransaction(IDbContextTransaction transaction)
+    {
+        _transaction = transaction;
+    }
+
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
+    {
+        await _transaction.CommitAsync(cancellationToken);
+    }
+
+    public async Task RollbackAsync(CancellationToken cancellationToken = default)
+    {
+        await _transaction.RollbackAsync(cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        _transaction.Dispose();
+    }
+}
+
+// Register the transaction behavior and manager
+services.AddScoped<ITransactionManager, EntityFrameworkTransactionManager>();
+services.AddScoped(typeof(IExecutionBehavior<,>), typeof(TransactionBehavior<,>));
+```
+
+*Located in: `FunctionalUseCases/TransactionBehavior.cs` and `FunctionalUseCases/Interfaces/ITransactionManager.cs`*
 
 ## Registration Options
 
