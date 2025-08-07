@@ -19,7 +19,7 @@ public class UseCaseDispatcherTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         // Act & Assert
-        await Should.ThrowAsync<ArgumentNullException>(() => 
+        await Should.ThrowAsync<ArgumentNullException>(() =>
            dispatcher.ExecuteAsync<string>(null!));
     }
 
@@ -105,7 +105,7 @@ public class UseCaseDispatcherTests
         // Arrange - Using FakeItEasy to create mocks
         var mockUseCase = A.Fake<IUseCase<TestUseCaseParameter, string>>();
         var expectedResult = Execution.Success("Mocked Result");
-        
+
         A.CallTo(() => mockUseCase.ExecuteAsync(A<TestUseCaseParameter>._, A<CancellationToken>._))
             .Returns(Task.FromResult(expectedResult));
 
@@ -121,7 +121,7 @@ public class UseCaseDispatcherTests
         // Assert
         result.ExecutionSucceeded.ShouldBeTrue();
         result.CheckedValue.ShouldBe("Mocked Result");
-        
+
         // Verify the use case was called with the correct parameter
         A.CallTo(() => mockUseCase.ExecuteAsync(parameter, A<CancellationToken>._))
             .MustHaveHappenedOnceExactly();
@@ -133,7 +133,7 @@ public class UseCaseDispatcherTests
         // Arrange - Using FakeItEasy to mock service provider behavior
         var mockServiceProvider = A.Fake<IServiceProvider>();
         var testUseCase = new TestUseCase();
-        
+
         // Configure the mock to return our test use case
         A.CallTo(() => mockServiceProvider.GetService(typeof(IUseCase<TestUseCaseParameter, string>)))
             .Returns(testUseCase);
@@ -149,7 +149,7 @@ public class UseCaseDispatcherTests
         // Assert
         result.ExecutionSucceeded.ShouldBeTrue();
         result.CheckedValue.ShouldBe("Test Result");
-        
+
         // Verify service provider was called to resolve the use case
         A.CallTo(() => mockServiceProvider.GetService(typeof(IUseCase<TestUseCaseParameter, string>)))
             .MustHaveHappenedOnceExactly();
