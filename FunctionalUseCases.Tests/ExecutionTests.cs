@@ -11,9 +11,9 @@ public class ExecutionTests
         var result = Execution.Success();
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.False(result.ExecutionFailed);
-        Assert.Null(result.Error);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.ExecutionFailed.ShouldBeFalse();
+        result.Error.ShouldBeNull();
     }
 
     [Fact]
@@ -26,10 +26,10 @@ public class ExecutionTests
         var result = Execution.Success(value);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.False(result.ExecutionFailed);
-        Assert.Null(result.Error);
-        Assert.Equal(value, result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.ExecutionFailed.ShouldBeFalse();
+        result.Error.ShouldBeNull();
+        result.CheckedValue.ShouldBe(value);
     }
 
     [Fact]
@@ -42,10 +42,10 @@ public class ExecutionTests
         var result = Execution.Failure(message);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Equal(message, result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldBe(message);
     }
 
     [Fact]
@@ -58,10 +58,10 @@ public class ExecutionTests
         var result = Execution.Failure(messages);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Error 1; Error 2", result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldBe("Error 1; Error 2");
     }
 
     [Fact]
@@ -76,9 +76,9 @@ public class ExecutionTests
         var result = Execution.Failure(message, errorCode, logLevel);
 
         // Assert
-        Assert.NotNull(result.Error);
-        Assert.Equal(errorCode, result.Error.ErrorCode);
-        Assert.Equal(logLevel, result.Error.LogLevel);
+        result.Error.ShouldNotBeNull();
+        result.Error.ErrorCode.ShouldBe(errorCode);
+        result.Error.LogLevel.ShouldBe(logLevel);
     }
 
     [Fact]
@@ -91,10 +91,10 @@ public class ExecutionTests
         var result = Execution.Failure<string>(exception);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Contains("Test exception", result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldContain("Test exception");
     }
 
     [Fact]
@@ -108,9 +108,9 @@ public class ExecutionTests
         var result = Execution.Failure<string>(message, exception);
 
         // Assert
-        Assert.NotNull(result.Error);
-        Assert.Contains("Custom error", result.Error.Message);
-        Assert.Contains("Test exception", result.Error.Message);
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldContain("Custom error");
+        result.Error.Message.ShouldContain("Test exception");
     }
 
     [Fact]
@@ -128,9 +128,9 @@ public class ExecutionTests
         var result = Execution.Failure<string>(aggregateException);
 
         // Assert
-        Assert.NotNull(result.Error);
-        Assert.Contains("Error 1", result.Error.Message);
-        Assert.Contains("Error 2", result.Error.Message);
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldContain("Error 1");
+        result.Error.Message.ShouldContain("Error 2");
     }
 
     [Fact]
@@ -145,8 +145,8 @@ public class ExecutionTests
         var combined = Execution.Combine(result1, result2, result3);
 
         // Assert
-        Assert.True(combined.ExecutionSucceeded);
-        Assert.Null(combined.Error);
+        combined.ExecutionSucceeded.ShouldBeTrue();
+        combined.Error.ShouldBeNull();
     }
 
     [Fact]
@@ -160,10 +160,10 @@ public class ExecutionTests
         var combined = Execution.Combine(successResult, failureResult);
 
         // Assert
-        Assert.False(combined.ExecutionSucceeded);
-        Assert.True(combined.ExecutionFailed);
-        Assert.NotNull(combined.Error);
-        Assert.Contains("Test error", combined.Error.Message);
+        combined.ExecutionSucceeded.ShouldBeFalse();
+        combined.ExecutionFailed.ShouldBeTrue();
+        combined.Error.ShouldNotBeNull();
+        combined.Error.Message.ShouldContain("Test error");
     }
 
     [Fact]
@@ -177,9 +177,9 @@ public class ExecutionTests
         var combined = Execution.Combine(failure1, failure2);
 
         // Assert
-        Assert.False(combined.ExecutionSucceeded);
-        Assert.NotNull(combined.Error);
-        Assert.Contains("Error 1", combined.Error.Message);
-        Assert.Contains("Error 2", combined.Error.Message);
+        combined.ExecutionSucceeded.ShouldBeFalse();
+        combined.Error.ShouldNotBeNull();
+        combined.Error.Message.ShouldContain("Error 1");
+        combined.Error.Message.ShouldContain("Error 2");
     }
 }
