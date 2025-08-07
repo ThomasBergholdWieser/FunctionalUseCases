@@ -9,9 +9,9 @@ public class ExecutionResultTests
         var result = Execution.Success();
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.False(result.ExecutionFailed);
-        Assert.Null(result.Error);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.ExecutionFailed.ShouldBeFalse();
+        result.Error.ShouldBeNull();
     }
 
     [Fact]
@@ -24,10 +24,10 @@ public class ExecutionResultTests
         var result = Execution.Failure(errorMessage);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Equal(errorMessage, result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldBe(errorMessage);
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public class ExecutionResultTests
         var result = Execution.Failure("Test error");
 
         // Act & Assert
-        var exception = Assert.Throws<ExecutionException>(() => result.ThrowIfFailed());
-        Assert.Contains("Test error", exception.Message);
+        var exception = Should.Throw<ExecutionException>(() => result.ThrowIfFailed());
+        exception.Message.ShouldContain("Test error");
     }
 
     [Fact]

@@ -8,7 +8,7 @@ public class UseCaseDispatcherTests
     public void Constructor_WithNullServiceProvider_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UseCaseDispatcher(null!));
+        Should.Throw<ArgumentNullException>(() => new UseCaseDispatcher(null!));
     }
 
     [Fact]
@@ -19,7 +19,7 @@ public class UseCaseDispatcherTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Should.ThrowAsync<ArgumentNullException>(() => 
             dispatcher.ExecuteAsync<string>(null!));
     }
 
@@ -35,10 +35,10 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Contains("No use case registered", result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldContain("No use case registered");
     }
 
     [Fact]
@@ -55,8 +55,8 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.Equal("Test Result", result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe("Test Result");
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.Equal("Behavior: Test Result", result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe("Behavior: Test Result");
     }
 
     [Fact]
@@ -94,9 +94,9 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
+        result.ExecutionSucceeded.ShouldBeTrue();
         // Due to reverse order wrapping in the pipeline, TestBehavior executes first, then TestBehavior2
-        Assert.Equal("Behavior: Behavior2: Test Result", result.CheckedValue);
+        result.CheckedValue.ShouldBe("Behavior: Behavior2: Test Result");
     }
 
     // Test helper classes
