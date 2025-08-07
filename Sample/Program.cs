@@ -83,14 +83,16 @@ else
 
 Console.WriteLine();
 
-// Example 4: WithBehavior - Per-call transaction behavior
-Console.WriteLine("Example 4: WithBehavior - Per-call transaction behavior");
+
+
+// Example 4: WithBehavior - Per-call transaction behavior (Open generic API)
+Console.WriteLine("Example 4: WithBehavior - Per-call transaction behavior (Open generic API)");
 try
 {
     var transactionResult = await dispatcher
-        .WithBehavior<TransactionBehavior<SampleUseCase, string>>()
-        .ExecuteAsync(new SampleUseCase("Transaction"));
-        
+        .WithBehavior(typeof(TransactionBehavior<,>))
+        .ExecuteAsync(new SampleUseCase("TransactionGeneric"));
+
     if (transactionResult.ExecutionSucceeded)
     {
         Console.WriteLine($"✅ Transaction Success: {transactionResult.CheckedValue}");
@@ -107,16 +109,18 @@ catch (Exception ex)
 
 Console.WriteLine();
 
-// Example 5: Use Case Chain with WithBehavior
-Console.WriteLine("Example 5: Use Case Chain with WithBehavior");
+
+
+// Example 5: Use Case Chain with WithBehavior (Open generic API)
+Console.WriteLine("Example 5: Use Case Chain with WithBehavior (Open generic API)");
 try
 {
     var chainWithBehaviorResult = await dispatcher
-        .StartWith(new SampleUseCase("ChainWith"))
-        .WithBehavior<TransactionBehavior<SampleUseCase, string>>()
-        .Then(new SampleUseCase("Behavior"))
+        .StartWith(new SampleUseCase("ChainWithGeneric"))
+        .WithBehavior(typeof(TransactionBehavior<,>))
+        .Then(new SampleUseCase("BehaviorGeneric"))
         .ExecuteAsync();
-        
+
     if (chainWithBehaviorResult.ExecutionSucceeded)
     {
         Console.WriteLine($"✅ Chain with Behavior Success: {chainWithBehaviorResult.CheckedValue}");
@@ -158,7 +162,9 @@ await TestResultPassing(dispatcher);
 
 Console.WriteLine("\nNote: Execution behaviors (TimingBehavior, LoggingBehavior) are registered using");
 Console.WriteLine("services.AddScoped(typeof(IExecutionBehavior<,>), typeof(MyBehavior<,>)) for global behaviors.");
-Console.WriteLine("Per-call behaviors can be added using .WithBehavior<T>() for specific executions.");
+Console.WriteLine("Per-call behaviors can be added using:");
+Console.WriteLine("  - .WithBehavior(typeof(OpenGeneric<,>)) for open generic behaviors");
+Console.WriteLine("  - .WithBehavior(behaviorInstance) for specific behavior instances");
 Console.WriteLine("Use case chaining allows sequential execution with fluent syntax and error handling.");
 Console.WriteLine("Transaction behaviors can be applied per-call and are chain-aware.");
 Console.WriteLine("\nDone!");

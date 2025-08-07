@@ -10,10 +10,10 @@ public class UseCaseChainNonGenericTests
     {
         var mockDispatcher = A.Fake<IUseCaseDispatcher>();
         var mockServiceProvider = A.Fake<IServiceProvider>();
-        
+
         A.CallTo(() => mockDispatcher.ServiceProvider)
             .Returns(mockServiceProvider);
-            
+
         return mockDispatcher;
     }
 

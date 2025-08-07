@@ -16,7 +16,7 @@ public static class UseCaseChainExtensions
     /// <param name="transactionManager">Optional transaction manager for chain-level transactions.</param>
     /// <param name="logger">Optional logger for transaction logging.</param>
     /// <returns>A new use case chain.</returns>
-    public static UseCaseChain<TResult> StartWith<TResult>(this IUseCaseDispatcher dispatcher, 
+    public static UseCaseChain<TResult> StartWith<TResult>(this IUseCaseDispatcher dispatcher,
         IUseCaseParameter<TResult> useCaseParameter,
         ITransactionManager? transactionManager = null,
         Microsoft.Extensions.Logging.ILogger? logger = null)

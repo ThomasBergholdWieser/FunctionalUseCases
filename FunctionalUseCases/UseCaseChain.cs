@@ -43,17 +43,27 @@ public class UseCaseChain<TResult>
         _chainId = chainId;
     }
 
+
+
     /// <summary>
-    /// Adds a behavior to this use case chain.
+    /// Adds a behavior to this use case chain using an open generic type definition.
     /// The behavior will be applied to all use cases in the chain.
     /// </summary>
-    /// <typeparam name="TBehavior">The type of behavior to add.</typeparam>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
     /// <returns>A new chain with the behavior added.</returns>
-    public UseCaseChain<TResult> WithBehavior<TBehavior>()
-        where TBehavior : class
+    public UseCaseChain<TResult> WithBehavior(Type behaviorType)
     {
-        var behavior = _serviceProvider.GetRequiredService<TBehavior>();
-        return WithBehavior(behavior);
+        if (behaviorType == null)
+        {
+            throw new ArgumentNullException(nameof(behaviorType));
+        }
+
+        if (!behaviorType.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException("Behavior type must be an open generic type definition (e.g., typeof(MyBehavior<,>))", nameof(behaviorType));
+        }
+
+        return WithBehavior(new OpenGenericBehaviorDescriptor(behaviorType));
     }
 
     /// <summary>
@@ -71,10 +81,10 @@ public class UseCaseChain<TResult>
 
         var newBehaviors = new List<object>(_perCallBehaviors) { behavior };
         var newChain = new UseCaseChain<TResult>(_dispatcher, _serviceProvider, _transactionManager, _logger, newBehaviors, _chainId);
-        
+
         // Copy existing steps
         newChain._steps.AddRange(_steps);
-        
+
         return newChain;
     }
 
@@ -166,7 +176,7 @@ public class UseCaseChain<TResult>
             }
 
             var result = await context.ExecuteInternalAsync(useCaseParameter, scope, cancellationToken);
-            
+
             if (result.ExecutionSucceeded)
             {
                 return (true, result.CheckedValue, null);
@@ -301,7 +311,7 @@ public class UseCaseChain<TResult>
                     _logger?.LogError(rollbackEx, "Failed to rollback transaction during cancellation");
                 }
             }
-            
+
             return Execution.Failure<TResult>("Chain execution was cancelled.");
         }
         catch (Exception ex)
@@ -381,17 +391,27 @@ public class UseCaseChain
         _chainId = chainId;
     }
 
+
+
     /// <summary>
-    /// Adds a behavior to this use case chain.
+    /// Adds a behavior to this use case chain using an open generic type definition.
     /// The behavior will be applied to all use cases in the chain.
     /// </summary>
-    /// <typeparam name="TBehavior">The type of behavior to add.</typeparam>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
     /// <returns>A new chain with the behavior added.</returns>
-    public UseCaseChain WithBehavior<TBehavior>()
-        where TBehavior : class
+    public UseCaseChain WithBehavior(Type behaviorType)
     {
-        var behavior = _serviceProvider.GetRequiredService<TBehavior>();
-        return WithBehavior(behavior);
+        if (behaviorType == null)
+        {
+            throw new ArgumentNullException(nameof(behaviorType));
+        }
+
+        if (!behaviorType.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException("Behavior type must be an open generic type definition (e.g., typeof(MyBehavior<,>))", nameof(behaviorType));
+        }
+
+        return WithBehavior(new OpenGenericBehaviorDescriptor(behaviorType));
     }
 
     /// <summary>
@@ -409,10 +429,10 @@ public class UseCaseChain
 
         var newBehaviors = new List<object>(_perCallBehaviors) { behavior };
         var newChain = new UseCaseChain(_dispatcher, _serviceProvider, _transactionManager, _logger, newBehaviors, _chainId);
-        
+
         // Copy existing steps
         newChain._steps.AddRange(_steps);
-        
+
         return newChain;
     }
 
