@@ -13,7 +13,10 @@ A complete .NET solution that implements functional processing of use cases usin
 - ➕ **Result Combination**: Combine multiple ExecutionResult objects using the `+` operator or `Combine()` method
 - 🧪 **Testable**: Easy to unit test individual use cases with comprehensive error scenarios
 - 📦 **Enterprise-Ready**: Robust implementation with logging integration and cancellation support
-- 🔗 **Execution Behaviors**: Cross-cutting concerns like logging, validation, caching, transactions, and performance monitoring through a clean execution behavior pattern
+- 🔗 **Global Execution Behaviors**: Cross-cutting concerns like logging, validation, caching applied to all use case executions
+- ⚡ **Per-Call Execution Behaviors**: Fluent API for applying behaviors to specific use case executions or chains using `WithBehavior<T>()`
+- 🔄 **Use Case Chaining**: Fluent chain execution with result passing and chain-aware behavior support
+- 🏷️ **Chain-Aware Transaction Management**: Intelligent transaction handling that adapts based on execution context (single use case vs. chain)
 
 ## Installation
 
@@ -182,9 +185,9 @@ public interface IUseCaseDispatcher
 
 *Located in: `FunctionalUseCases/Interfaces/IUseCaseDispatcher.cs`*
 
-## Execution Behaviors
+## Global Execution Behaviors
 
-Execution behaviors allow you to implement cross-cutting concerns like logging, validation, caching, performance monitoring, and more. They wrap around use case execution in a clean, composable way.
+Global execution behaviors allow you to implement cross-cutting concerns like logging, validation, caching, performance monitoring, and more. They wrap around all use case executions in a clean, composable way and are registered globally via dependency injection.
 
 ### IExecutionBehavior Interface
 
@@ -256,26 +259,26 @@ public class LoggingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TU
 
 ### Manual Registration
 
-Execution behaviors are NOT automatically registered when you call the registration extension methods. You must register them manually:
+Global execution behaviors are NOT automatically registered when you call the registration extension methods. You must register them manually and they will be applied to all use case executions:
 
 ```csharp
 // Register use cases from assembly
 services.AddUseCasesFromAssemblyContaining<GreetUserUseCase>();
 
-// Register execution behaviors manually
+// Register global execution behaviors manually - these apply to ALL use case executions
 services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
 services.AddScoped(typeof(IExecutionBehavior<,>), typeof(TimingBehavior<,>));
 ```
 
 ### Execution Order
 
-Behaviors are executed in the order they are registered. Each behavior can execute logic before and after the next step in the pipeline:
+Global behaviors are executed in the order they are registered. Each behavior can execute logic before and after the next step in the pipeline:
 
 ```
 Behavior 1 (before) → Behavior 2 (before) → Use Case Handler → Behavior 2 (after) → Behavior 1 (after)
 ```
 
-### Common Execution Behavior Patterns
+### Common Global Execution Behavior Patterns
 
 **Validation Behavior:**
 ```csharp
@@ -443,11 +446,394 @@ services.AddScoped(typeof(IExecutionBehavior<,>), typeof(TransactionBehavior<,>)
 
 *Located in: `FunctionalUseCases/TransactionBehavior.cs` and `FunctionalUseCases/Interfaces/ITransactionManager.cs`*
 
+## Per-Call Execution Behaviors (WithBehavior API)
+
+In addition to global behaviors that apply to all use case executions, the library provides a powerful fluent API for applying behaviors to specific use case executions or chains. This allows for fine-grained control over when and where behaviors are applied.
+
+### Two Types of Behaviors
+
+The system now supports two distinct behavior application patterns:
+
+1. **Global Behaviors**: Registered with dependency injection and applied to ALL use case executions
+2. **Per-Call Behaviors**: Applied to specific executions using the `WithBehavior<T>()` fluent API
+
+### WithBehavior() Fluent API
+
+The `WithBehavior<T>()` method allows you to apply behaviors to specific use case executions:
+
+#### Single Use Case with Behavior
+
+```csharp
+// Apply a transaction behavior to a specific use case execution
+var result = await dispatcher
+    .WithBehavior<TransactionBehavior<MyUseCase, string>>()
+    .ExecuteAsync(new MyUseCase("data"));
+
+// Apply multiple behaviors to the same execution
+var result = await dispatcher
+    .WithBehavior<TransactionBehavior<MyUseCase, string>>()
+    .WithBehavior<ValidationBehavior<MyUseCase, string>>()
+    .ExecuteAsync(new MyUseCase("data"));
+
+// Use behavior instances instead of types
+var customBehavior = new CustomBehavior<MyUseCase, string>(someParameter);
+var result = await dispatcher
+    .WithBehavior(customBehavior)
+    .ExecuteAsync(new MyUseCase("data"));
+```
+
+#### Use Case Chains with Behaviors
+
+```csharp
+// Apply behavior to an entire use case chain
+var result = await dispatcher
+    .StartWith(new FirstUseCase("initial"))
+    .WithBehavior<TransactionBehavior<FirstUseCase, string>>()
+    .Then(x => new SecondUseCase(x.Id, x.Property))
+    .Then(x => new ThirdUseCase(x.ProcessedData))
+    .ExecuteAsync();
+
+// Apply multiple behaviors to a chain
+var result = await dispatcher
+    .StartWith(new GetUserUseCase(userId))
+    .WithBehavior<TransactionBehavior<GetUserUseCase, User>>()
+    .WithBehavior<ValidationBehavior<GetUserUseCase, User>>()
+    .Then(user => new ValidateUserUseCase(user))
+    .Then(user => new SendWelcomeEmailUseCase(user.Email, user.Name))
+    .ExecuteAsync();
+
+// Behaviors can be added at any point in the chain
+var result = await dispatcher
+    .StartWith(new FirstUseCase())
+    .Then(x => new SecondUseCase(x.Id))
+    .WithBehavior<TransactionBehavior<SecondUseCase, ProcessedData>>()
+    .Then(x => new ThirdUseCase(x.ProcessedData))
+    .ExecuteAsync();
+```
+
+### Chain-Aware Transaction Behavior
+
+The `TransactionBehavior<TUseCaseParameter, TResult>` is a sophisticated example of a chain-aware behavior that adapts its strategy based on the execution context:
+
+#### Intelligent Transaction Management
+
+- **Single Use Case**: Creates transaction at use case start → commits/rollbacks at use case end
+- **Chain Execution**: Creates transaction at chain start → commits/rollbacks at chain end
+- **Automatic Detection**: Uses `IExecutionScope` to determine context without user intervention
+
+#### Example Transaction Behavior Usage
+
+```csharp
+// Transaction per single use case
+var result = await dispatcher
+    .WithBehavior<TransactionBehavior<CreateOrderUseCase, Order>>()
+    .ExecuteAsync(new CreateOrderUseCase(orderData));
+// Creates transaction → executes use case → commits/rollbacks transaction
+
+// Transaction per entire chain
+var result = await dispatcher
+    .StartWith(new CreateOrderUseCase(orderData))
+    .WithBehavior<TransactionBehavior<CreateOrderUseCase, Order>>()
+    .Then(order => new ReserveInventoryUseCase(order.Items))
+    .Then(inventory => new ProcessPaymentUseCase(orderData.Payment))
+    .Then(payment => new SendConfirmationEmailUseCase(order.CustomerEmail))
+    .ExecuteAsync();
+// Creates transaction → executes entire chain → commits/rollbacks transaction
+```
+
+### Creating Chain-Aware Behaviors
+
+To create behaviors that adapt to execution context, implement `IScopedExecutionBehavior<TUseCaseParameter, TResult>` instead of the base `IExecutionBehavior<TUseCaseParameter, TResult>`:
+
+```csharp
+using Microsoft.Extensions.Logging;
+
+public class CustomTransactionBehavior<TUseCaseParameter, TResult> : ScopedExecutionBehavior<TUseCaseParameter, TResult>
+    where TUseCaseParameter : IUseCaseParameter<TResult>
+    where TResult : notnull
+{
+    private readonly ITransactionManager _transactionManager;
+    private readonly ILogger _logger;
+
+    public CustomTransactionBehavior(ITransactionManager transactionManager, ILogger logger)
+    {
+        _transactionManager = transactionManager;
+        _logger = logger;
+    }
+
+    public override async Task<ExecutionResult<TResult>> ExecuteAsync(
+        TUseCaseParameter useCaseParameter, 
+        IExecutionScope scope, 
+        PipelineBehaviorDelegate<TResult> next, 
+        CancellationToken cancellationToken = default)
+    {
+        if (scope.IsChainExecution)
+        {
+            // Chain execution logic
+            if (scope.IsChainStart)
+            {
+                _logger.LogInformation("Starting transaction for chain {ChainId}", scope.ChainId);
+                // Start transaction for entire chain
+            }
+            
+            var result = await next().ConfigureAwait(false);
+            
+            if (scope.IsChainEnd)
+            {
+                // Commit or rollback transaction at chain end
+                if (result.ExecutionSucceeded)
+                {
+                    _logger.LogInformation("Committing transaction for chain {ChainId}", scope.ChainId);
+                    // Commit transaction
+                }
+                else
+                {
+                    _logger.LogWarning("Rolling back transaction for chain {ChainId}", scope.ChainId);
+                    // Rollback transaction
+                }
+            }
+            
+            return result;
+        }
+        else
+        {
+            // Single use case execution logic
+            _logger.LogInformation("Starting transaction for single use case");
+            // Create transaction → execute → commit/rollback
+            
+            var transaction = await _transactionManager.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var result = await next().ConfigureAwait(false);
+                
+                if (result.ExecutionSucceeded)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                else
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                }
+                
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+            finally
+            {
+                transaction.Dispose();
+            }
+        }
+    }
+}
+```
+
+### ExecutionScope Interface
+
+The `IExecutionScope` interface provides context information to chain-aware behaviors:
+
+```csharp
+public interface IExecutionScope
+{
+    bool IsChainExecution { get; }     // True if part of a use case chain
+    bool IsChainStart { get; }         // True if first use case in chain
+    bool IsChainEnd { get; }           // True if last use case in chain
+    string? ChainId { get; }           // Unique identifier for the chain
+}
+```
+
+### Behavior Registration for Per-Call Usage
+
+Per-call behaviors need to be registered in the dependency injection container so they can be resolved:
+
+```csharp
+// Register behaviors that will be used with WithBehavior<T>()
+services.AddScoped<TransactionBehavior<CreateOrderUseCase, Order>>();
+services.AddScoped<ValidationBehavior<CreateOrderUseCase, Order>>();
+services.AddScoped<CachingBehavior<GetUserUseCase, User>>();
+
+// Register any dependencies they need
+services.AddScoped<ITransactionManager, EntityFrameworkTransactionManager>();
+services.AddMemoryCache(); // For caching behavior
+
+// Global behaviors are still registered the same way
+services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
+```
+
+### Key Benefits
+
+1. **Selective Application**: Apply expensive behaviors (like transactions) only where needed
+2. **Chain-Aware Intelligence**: Behaviors automatically adapt to single vs. chain execution
+3. **Composition**: Combine multiple per-call behaviors for specific scenarios  
+4. **Performance**: Avoid overhead of global behaviors when not needed
+5. **Flexibility**: Mix global and per-call behaviors as appropriate
+
+### Use Case Examples
+
+**Scenario 1: E-commerce Order Processing**
+```csharp
+// Transaction behavior applied to entire order workflow
+var result = await dispatcher
+    .StartWith(new ValidateOrderUseCase(orderRequest))
+    .WithBehavior<TransactionBehavior<ValidateOrderUseCase, ValidatedOrder>>()
+    .Then(order => new ReserveInventoryUseCase(order.Items))
+    .Then(reservation => new ProcessPaymentUseCase(reservation.OrderId, orderRequest.Payment))
+    .Then(payment => new CreateOrderUseCase(payment.OrderId, payment.Amount))
+    .ExecuteAsync();
+// Single transaction spans the entire workflow
+```
+
+**Scenario 2: Caching Expensive Queries**
+```csharp
+// Cache only expensive user profile queries
+var profile = await dispatcher
+    .WithBehavior<CachingBehavior<GetUserProfileUseCase, UserProfile>>()
+    .ExecuteAsync(new GetUserProfileUseCase(userId));
+
+// Regular user operations don't use caching
+var updateResult = await dispatcher
+    .ExecuteAsync(new UpdateUserNameUseCase(userId, newName));
+```
+
+**Scenario 3: Validation for Critical Operations**
+```csharp
+// Apply strict validation only to sensitive operations
+var result = await dispatcher
+    .WithBehavior<StrictValidationBehavior<DeleteAccountUseCase, bool>>()
+    .WithBehavior<AuditLogBehavior<DeleteAccountUseCase, bool>>()
+    .ExecuteAsync(new DeleteAccountUseCase(userId, confirmationToken));
+```
+
+## Use Case Chaining
+
+The library provides powerful use case chaining capabilities that allow you to compose multiple use cases into a sequential workflow. Results are automatically passed between use cases, and execution stops on the first failure.
+
+### Basic Chain Syntax
+
+```csharp
+// Chain multiple use cases with result passing
+var result = await dispatcher
+    .StartWith(new GetUserUseCase(userId))
+    .Then(user => new ValidateUserUseCase(user))
+    .Then(user => new SendWelcomeEmailUseCase(user.Email, user.Name))
+    .ExecuteAsync();
+
+// Access the final result
+if (result.ExecutionSucceeded)
+{
+    Console.WriteLine($"Welcome email sent: {result.CheckedValue}");
+}
+```
+
+### Result Passing Between Use Cases
+
+The `Then()` method automatically passes the result of the previous use case to the next:
+
+```csharp
+var result = await dispatcher
+    .StartWith(new CreateUserUseCase("John", "john@example.com"))
+    .Then(user => new AssignRoleUseCase(user.Id, "StandardUser"))
+    .Then(userRole => new SendActivationEmailUseCase(userRole.User.Email, userRole.ActivationToken))
+    .Then(activation => new LogUserCreationUseCase(activation.UserId, activation.Timestamp))
+    .ExecuteAsync();
+
+// Each use case receives the .CheckedValue from the previous use case as its parameter
+```
+
+### Error Handling in Chains
+
+Chains stop execution on the first failure and provide comprehensive error handling:
+
+```csharp
+var result = await dispatcher
+    .StartWith(new ValidateInputUseCase(inputData))
+    .Then(validInput => new ProcessDataUseCase(validInput))
+    .Then(processedData => new SaveDataUseCase(processedData))
+    .OnError(error => 
+    {
+        // Handle any error that occurred in the chain
+        logger.LogError("Chain execution failed: {Error}", error.Message);
+        return Task.FromResult(Execution.Failure<SavedData>($"Processing failed: {error.Message}"));
+    })
+    .ExecuteAsync();
+
+// If any step fails, the OnError handler is called and subsequent steps are skipped
+```
+
+### Combining Chains with Behaviors
+
+Chains work seamlessly with both global and per-call behaviors:
+
+```csharp
+// Apply transaction behavior to entire chain
+var result = await dispatcher
+    .StartWith(new BeginOrderUseCase(customerId))
+    .WithBehavior<TransactionBehavior<BeginOrderUseCase, Order>>()
+    .Then(order => new AddItemsUseCase(order.Id, items))
+    .Then(order => new CalculateTotalUseCase(order))
+    .Then(order => new ProcessPaymentUseCase(order.Total, paymentInfo))
+    .ExecuteAsync();
+
+// Global logging behavior will still apply to all steps
+// Transaction behavior will create one transaction for the entire chain
+```
+
+### Advanced Chain Patterns
+
+**Conditional Execution:**
+```csharp
+var result = await dispatcher
+    .StartWith(new GetUserUseCase(userId))
+    .Then(user => user.IsActive 
+        ? new SendNotificationUseCase(user.Id, message)
+        : new LogInactiveUserUseCase(user.Id))
+    .ExecuteAsync();
+```
+
+**Parallel Processing (using multiple chains):**
+```csharp
+// Execute multiple independent chains
+var userTask = dispatcher
+    .StartWith(new GetUserUseCase(userId))
+    .Then(user => new UpdateLastLoginUseCase(user.Id))
+    .ExecuteAsync();
+
+var preferencesTask = dispatcher
+    .StartWith(new GetUserPreferencesUseCase(userId))
+    .Then(prefs => new ApplyThemeUseCase(prefs.ThemeId))
+    .ExecuteAsync();
+
+// Wait for both chains to complete
+var userResult = await userTask;
+var preferencesResult = await preferencesTask;
+```
+
+**Chain Branching:**
+```csharp
+var result = await dispatcher
+    .StartWith(new ProcessOrderUseCase(orderId))
+    .Then(order => order.IsExpress 
+        ? dispatcher
+            .StartWith(new ExpressShippingUseCase(order))
+            .Then(shipping => new SendExpressNotificationUseCase(shipping))
+            .ExecuteAsync()
+        : dispatcher
+            .StartWith(new StandardShippingUseCase(order))
+            .Then(shipping => new SendStandardNotificationUseCase(shipping))
+            .ExecuteAsync())
+    .ExecuteAsync();
+```
+
 ## Registration Options
 
 The library provides several extension methods for registering use cases (*located in: `FunctionalUseCases/Extensions/UseCaseRegistrationExtensions.cs`*):
 
-**Note:** Execution behaviors are NOT automatically registered. Register execution behaviors manually using standard DI registration:
+**Note:** There are two types of execution behaviors that require different registration approaches:
+
+1. **Global behaviors** are NOT automatically registered. Register them manually using standard DI registration - they apply to ALL executions:
 
 ```csharp
 // Register from specific assemblies
@@ -462,8 +848,17 @@ services.AddUseCasesFromAssemblyContaining<MyUseCaseParameter>();
 // Specify service lifetime (default is Transient)
 services.AddUseCasesFromAssembly(ServiceLifetime.Scoped);
 
-// Register execution behaviors manually
+// Register global execution behaviors manually - applied to ALL use case executions
 services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
+```
+
+2. **Per-call behaviors** used with `WithBehavior<T>()` need to be registered for dependency injection resolution:
+
+```csharp
+// Register specific behaviors for per-call usage
+services.AddScoped<TransactionBehavior<CreateOrderUseCase, Order>>();
+services.AddScoped<ValidationBehavior<CreateUserUseCase, User>>();
+services.AddScoped<CachingBehavior<GetUserUseCase, User>>();
 ```
 
 ## Advanced ExecutionResult Features
@@ -649,6 +1044,25 @@ Example 2: Failed execution (empty name)
 info: Starting execution of use case: SampleUseCase -> String
 warn: Use case execution failed: SampleUseCase -> String in 101ms. Error: Name cannot be empty or whitespace
 ❌ Error: Name cannot be empty or whitespace
+
+Example 3: Use Case Chain
+info: Starting execution of use case: SampleUseCase -> String
+info: Successfully executed use case: SampleUseCase -> String in 98ms
+info: Starting execution of use case: SampleUseCase -> String
+info: Successfully executed use case: SampleUseCase -> String in 95ms
+✅ Chain Success: Hello, SecondStep-9! Welcome to FunctionalUseCases.
+
+Example 4: WithBehavior - Per-call transaction behavior
+⚠️ Transaction behavior not available (expected): Unable to resolve service for type 'TransactionBehavior`2[SampleUseCase,String]'
+
+Example 5: Use Case Chain with WithBehavior
+⚠️ Chain with transaction behavior not available (expected): Unable to resolve service for type 'TransactionBehavior`2[SampleUseCase,String]'
+
+Example 6: Interactive
+Enter your name: Alice
+info: Starting execution of use case: SampleUseCase -> String
+info: Successfully executed use case: SampleUseCase -> String in 92ms
+✅ Interactive Success: Hello, Alice! Welcome to FunctionalUseCases.
 ```
 
 ## Best Practices
@@ -661,8 +1075,12 @@ warn: Use case execution failed: SampleUseCase -> String in 101ms. Error: Name c
 6. **Cancellation Support**: Support cancellation tokens for responsive applications
 7. **Meaningful Names**: Use descriptive names that clearly indicate the business operation being performed
 8. **Single Responsibility**: Each use case should handle one specific business scenario
-9. **Execution Behaviors**: Use behaviors for cross-cutting concerns rather than cluttering use case implementations
-10. **Behavior Registration**: Remember to manually register execution behaviors as they are not automatically discovered
+9. **Global vs Per-Call Behaviors**: Use global behaviors for cross-cutting concerns that apply everywhere (logging, monitoring). Use per-call behaviors for context-specific operations (transactions, validation, caching)
+10. **Behavior Registration**: Remember to manually register both global and per-call execution behaviors as they are not automatically discovered
+11. **Chain Design**: Design use case chains to be atomic units of work - if any step fails, the entire operation should be considered failed
+12. **Result Passing**: Structure use case parameters to accept the exact data they need from previous use cases in chains
+13. **Transaction Scope**: Use TransactionBehavior on chains rather than individual use cases when you need atomic operations across multiple steps
+14. **Chain-Aware Behaviors**: Implement IScopedExecutionBehavior when creating behaviors that need to adapt based on execution context
 
 ## Interface Naming
 
