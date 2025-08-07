@@ -2,6 +2,8 @@
 # For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nuget-packages
 
 name: Publish to NuGet
+permissions:
+  contents: read
 
 on:
   release:
