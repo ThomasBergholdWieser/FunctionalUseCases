@@ -15,8 +15,9 @@ public class ExecutionResultExtensionsTests
         var noLogResult = result.NoLog();
 
         // Assert
-        Assert.True(noLogResult.NoLog);
-        Assert.Same(result, noLogResult); // Should return the same instance
+        noLogResult.NoLog.ShouldNotBeNull();
+        noLogResult.NoLog.Value.ShouldBeTrue();
+        noLogResult.ShouldBeSameAs(result); // Should return the same instance
     }
 
     [Fact]
@@ -29,8 +30,8 @@ public class ExecutionResultExtensionsTests
         var task = result.AsTask();
 
         // Assert
-        Assert.True(task.IsCompleted);
-        Assert.Equal(result, task.Result);
+        task.IsCompleted.ShouldBeTrue();
+        task.Result.ShouldBe(result);
     }
 
     [Fact]
@@ -38,14 +39,14 @@ public class ExecutionResultExtensionsTests
     {
         // Arrange
         var result = Execution.Success();
-        var mockLogger = new TestLogger();
+        var mockLogger = A.Fake<ILogger>();
 
         // Act
         var loggedResult = result.Log(mockLogger);
 
         // Assert
-        Assert.Same(result, loggedResult);
-        Assert.Empty(mockLogger.LoggedMessages);
+        loggedResult.ShouldBeSameAs(result);
+        A.CallTo(mockLogger).MustNotHaveHappened();
     }
 
     [Fact]
@@ -54,16 +55,20 @@ public class ExecutionResultExtensionsTests
         // Arrange
         const string errorMessage = "Test error";
         var result = Execution.Failure(errorMessage);
-        var mockLogger = new TestLogger();
+        var mockLogger = A.Fake<ILogger>();
+        A.CallTo(() => mockLogger.IsEnabled(A<LogLevel>._)).Returns(true);
 
         // Act
         var loggedResult = result.Log(mockLogger);
 
         // Assert
-        Assert.Same(result, loggedResult);
-        Assert.NotEmpty(mockLogger.LoggedMessages);
-        Assert.Contains(mockLogger.LoggedMessages, m => m.Message.Contains(errorMessage) && m.LogLevel == LogLevel.Error);
-        Assert.True(result.Error!.Logged);
+        loggedResult.ShouldBeSameAs(result);
+        A.CallTo(mockLogger)
+            .Where(call => call.Method.Name == "Log" && 
+                          call.Arguments.Count > 0 && 
+                          call.Arguments[0].Equals(LogLevel.Error))
+            .MustHaveHappened();
+        result.Error!.Logged.ShouldBeTrue();
     }
 
     [Fact]
@@ -72,18 +77,18 @@ public class ExecutionResultExtensionsTests
         // Arrange
         const string errorMessage = "Test error";
         var result = Execution.Failure(errorMessage);
-        var mockLogger = new TestLogger();
-
+        var mockLogger = A.Fake<ILogger>();
+        
         // Log it first to set the Logged flag
         result.Log(mockLogger);
-        mockLogger.LoggedMessages.Clear(); // Clear the log to test the second call
+        Fake.ClearRecordedCalls(mockLogger); // Clear the recorded calls to test the second call
 
         // Act - log again
         var loggedResult = result.Log(mockLogger);
 
         // Assert
-        Assert.Same(result, loggedResult);
-        Assert.Empty(mockLogger.LoggedMessages); // Should not log again
+        loggedResult.ShouldBeSameAs(result);
+        A.CallTo(mockLogger).MustNotHaveHappened(); // Should not log again
     }
 
     [Fact]
@@ -92,16 +97,43 @@ public class ExecutionResultExtensionsTests
         // Arrange
         var warningResult = Execution.Failure("Warning message", logLevel: LogLevel.Warning);
         var infoResult = Execution.Failure("Info message", logLevel: LogLevel.Information);
-        var mockLogger = new TestLogger();
+        var mockLogger = A.Fake<ILogger>();
+        A.CallTo(() => mockLogger.IsEnabled(A<LogLevel>._)).Returns(true);
 
         // Act
         warningResult.Log(mockLogger);
         infoResult.Log(mockLogger);
 
         // Assert
-        Assert.Equal(2, mockLogger.LoggedMessages.Count);
-        Assert.Contains(mockLogger.LoggedMessages, m => m.LogLevel == LogLevel.Warning);
-        Assert.Contains(mockLogger.LoggedMessages, m => m.LogLevel == LogLevel.Information);
+        A.CallTo(mockLogger)
+            .Where(call => call.Method.Name == "Log" && 
+                          call.Arguments.Count > 0 && 
+                          call.Arguments[0].Equals(LogLevel.Warning))
+            .MustHaveHappened();
+            
+        A.CallTo(mockLogger)
+            .Where(call => call.Method.Name == "Log" && 
+                          call.Arguments.Count > 0 && 
+                          call.Arguments[0].Equals(LogLevel.Information))
+            .MustHaveHappened();
+    }
+
+    [Fact]
+    public void Log_WithFailedResult_UsingTestLogger_ShouldLogCorrectMessage()
+    {
+        // Arrange
+        const string errorMessage = "Test error";
+        var result = Execution.Failure(errorMessage);
+        var testLogger = new TestLogger();
+
+        // Act
+        var loggedResult = result.Log(testLogger);
+
+        // Assert
+        loggedResult.ShouldBeSameAs(result);
+        testLogger.LoggedMessages.ShouldNotBeEmpty();
+        testLogger.LoggedMessages.ShouldContain(m => m.Message.Contains(errorMessage) && m.LogLevel == LogLevel.Error);
+        result.Error!.Logged.ShouldBeTrue();
     }
 
     private class TestLogger : ILogger

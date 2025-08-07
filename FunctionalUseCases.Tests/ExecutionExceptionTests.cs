@@ -12,7 +12,7 @@ public class ExecutionExceptionTests
         var exception = new ExecutionException(message);
 
         // Assert
-        Assert.Equal(message, exception.Message);
+        exception.Message.ShouldBe(message);
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class ExecutionExceptionTests
 
         // Act & Assert - Should not throw
         // The [Serializable] attribute is applied to the class
-        Assert.True(exception.GetType().GetCustomAttributes(typeof(SerializableAttribute), false).Length > 0);
+        exception.GetType().GetCustomAttributes(typeof(SerializableAttribute), false).Length.ShouldBeGreaterThan(0);
     }
 
     [Fact]
@@ -34,6 +34,6 @@ public class ExecutionExceptionTests
         var exception = new ExecutionException("test");
 
         // Act & Assert
-        Assert.IsAssignableFrom<Exception>(exception);
+        exception.ShouldBeAssignableTo<Exception>();
     }
 }

@@ -14,9 +14,9 @@ public class ExecutionErrorTests
         var error = new ExecutionError(message);
 
         // Assert
-        Assert.Equal(message, error.Message);
-        Assert.Single(error.Messages);
-        Assert.Equal(message, error.Messages[0]);
+        error.Message.ShouldBe(message);
+        error.Messages.ShouldHaveSingleItem();
+        error.Messages[0].ShouldBe(message);
     }
 
     [Fact]
@@ -29,9 +29,9 @@ public class ExecutionErrorTests
         var error = new ExecutionError(messages);
 
         // Assert
-        Assert.Equal("Error 1; Error 2; Error 3", error.Message);
-        Assert.Equal(3, error.Messages.Count);
-        Assert.Equal(messages, error.Messages);
+        error.Message.ShouldBe("Error 1; Error 2; Error 3");
+        error.Messages.Count.ShouldBe(3);
+        error.Messages.ShouldBe(messages);
     }
 
     [Fact]
@@ -44,8 +44,8 @@ public class ExecutionErrorTests
         var error = new ExecutionError(messages);
 
         // Assert
-        Assert.Equal(2, error.Messages.Count);
-        Assert.Equal("Error 1; Error 2", error.Message);
+        error.Messages.Count.ShouldBe(2);
+        error.Message.ShouldBe("Error 1; Error 2");
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public class ExecutionErrorTests
         var error = new ExecutionError("test");
 
         // Assert
-        Assert.Null(error.ErrorCode);
-        Assert.Equal(LogLevel.Error, error.LogLevel);
-        Assert.False(error.Logged);
+        error.ErrorCode.ShouldBeNull();
+        error.LogLevel.ShouldBe(LogLevel.Error);
+        error.Logged.ShouldBeFalse();
     }
 
     [Fact]
@@ -71,8 +71,8 @@ public class ExecutionErrorTests
         error.LogLevel = LogLevel.Warning;
 
         // Assert
-        Assert.Equal(404, error.ErrorCode);
-        Assert.Equal(LogLevel.Warning, error.LogLevel);
+        error.ErrorCode.ShouldBe(404);
+        error.LogLevel.ShouldBe(LogLevel.Warning);
     }
 }
 
@@ -88,8 +88,8 @@ public class ExecutionErrorGenericTests
         var error = new ExecutionError<int>(customMessages);
 
         // Assert
-        Assert.Equal("1; 2; 3", error.Message);
-        Assert.Equal(3, error.Messages.Count);
+        error.Message.ShouldBe("1; 2; 3");
+        error.Messages.Count.ShouldBe(3);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class ExecutionErrorGenericTests
         var error = new ExecutionError<int>(customMessages);
 
         // Assert
-        Assert.Equal("100; 200", error.Message);
-        Assert.Equal(2, error.Messages.Count);
+        error.Message.ShouldBe("100; 200");
+        error.Messages.Count.ShouldBe(2);
     }
 }

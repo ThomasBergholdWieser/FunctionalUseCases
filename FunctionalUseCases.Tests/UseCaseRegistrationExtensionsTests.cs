@@ -17,8 +17,8 @@ public class UseCaseRegistrationExtensionsTests
 
         // Assert
         var dispatcher = serviceProvider.GetService<IUseCaseDispatcher>();
-        Assert.NotNull(dispatcher);
-        Assert.IsType<UseCaseDispatcher>(dispatcher);
+        dispatcher.ShouldNotBeNull();
+        dispatcher.ShouldBeOfType<UseCaseDispatcher>();
     }
 
     [Fact]
@@ -34,11 +34,11 @@ public class UseCaseRegistrationExtensionsTests
 
         // Assert
         var dispatcher = serviceProvider.GetService<IUseCaseDispatcher>();
-        Assert.NotNull(dispatcher);
+        dispatcher.ShouldNotBeNull();
 
         // Check if test use case from this assembly is registered
         var useCase = serviceProvider.GetService<IUseCase<TestUseCaseParameter, string>>();
-        Assert.NotNull(useCase);
+        useCase.ShouldNotBeNull();
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class UseCaseRegistrationExtensionsTests
 
         if (useCaseDescriptor != null)
         {
-            Assert.Equal(ServiceLifetime.Singleton, useCaseDescriptor.Lifetime);
+            useCaseDescriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
         }
     }
 
@@ -73,7 +73,7 @@ public class UseCaseRegistrationExtensionsTests
 
         // Assert
         var dispatcher = serviceProvider.GetService<IUseCaseDispatcher>();
-        Assert.NotNull(dispatcher);
+        dispatcher.ShouldNotBeNull();
     }
 
     [Fact]
@@ -88,10 +88,10 @@ public class UseCaseRegistrationExtensionsTests
 
         // Assert
         var dispatcher = serviceProvider.GetService<IUseCaseDispatcher>();
-        Assert.NotNull(dispatcher);
+        dispatcher.ShouldNotBeNull();
 
         var useCase = serviceProvider.GetService<IUseCase<TestUseCaseParameter, string>>();
-        Assert.NotNull(useCase);
+        useCase.ShouldNotBeNull();
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class UseCaseRegistrationExtensionsTests
         var result = services.AddUseCases();
 
         // Assert
-        Assert.Same(services, result);
+        result.ShouldBeSameAs(services);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class UseCaseRegistrationExtensionsTests
         var result = services.AddUseCasesFromAssembly();
 
         // Assert
-        Assert.Same(services, result);
+        result.ShouldBeSameAs(services);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class UseCaseRegistrationExtensionsTests
         var result = services.AddUseCasesFromAssemblyContaining<TestUseCaseParameter>();
 
         // Assert
-        Assert.Same(services, result);
+        result.ShouldBeSameAs(services);
     }
 
     // Test helper classes

@@ -12,10 +12,10 @@ public class ExecutionResultGenericTests
         var result = Execution.Success(value);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.False(result.ExecutionFailed);
-        Assert.Null(result.Error);
-        Assert.Equal(value, result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.ExecutionFailed.ShouldBeFalse();
+        result.Error.ShouldBeNull();
+        result.CheckedValue.ShouldBe(value);
     }
 
     [Fact]
@@ -28,10 +28,10 @@ public class ExecutionResultGenericTests
         var result = Execution.Failure<string>(errorMessage);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Equal(errorMessage, result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldBe(errorMessage);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class ExecutionResultGenericTests
         var result = Execution.Failure<string>("Test error");
 
         // Act & Assert
-        Assert.Throws<NullReferenceException>(() => result.CheckedValue);
+        Should.Throw<NullReferenceException>(() => result.CheckedValue);
     }
 
     [Fact]
@@ -54,8 +54,8 @@ public class ExecutionResultGenericTests
         ExecutionResult<int> result = value;
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.Equal(value, result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe(value);
     }
 
     [Fact]
@@ -66,9 +66,9 @@ public class ExecutionResultGenericTests
         var failureResult = Execution.Failure<string>("error message");
 
         // Act & Assert
-        Assert.Equal("ExecutionSucceeded", successResult.ToString());
-        Assert.Contains("ExecutionFailed", failureResult.ToString());
-        Assert.Contains("error message", failureResult.ToString());
+        successResult.ToString().ShouldBe("ExecutionSucceeded");
+        failureResult.ToString().ShouldContain("ExecutionFailed");
+        failureResult.ToString().ShouldContain("error message");
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class ExecutionResultGenericTests
         var combined = result1 + result2;
 
         // Assert
-        Assert.True(combined.ExecutionSucceeded);
+        combined.ExecutionSucceeded.ShouldBeTrue();
     }
 
     [Fact]
@@ -96,6 +96,6 @@ public class ExecutionResultGenericTests
         var combined = successResult + failureResult;
 
         // Assert
-        Assert.True(combined.ExecutionFailed);
+        combined.ExecutionFailed.ShouldBeTrue();
     }
 }

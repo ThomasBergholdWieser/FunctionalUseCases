@@ -8,7 +8,7 @@ public class UseCaseDispatcherTests
     public void Constructor_WithNullServiceProvider_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UseCaseDispatcher(null!));
+        Should.Throw<ArgumentNullException>(() => new UseCaseDispatcher(null!));
     }
 
     [Fact]
@@ -19,8 +19,8 @@ public class UseCaseDispatcherTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            dispatcher.ExecuteAsync<string>(null!));
+        await Should.ThrowAsync<ArgumentNullException>(() => 
+           dispatcher.ExecuteAsync<string>(null!));
     }
 
     [Fact]
@@ -35,10 +35,10 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.False(result.ExecutionSucceeded);
-        Assert.True(result.ExecutionFailed);
-        Assert.NotNull(result.Error);
-        Assert.Contains("No use case registered", result.Error.Message);
+        result.ExecutionSucceeded.ShouldBeFalse();
+        result.ExecutionFailed.ShouldBeTrue();
+        result.Error.ShouldNotBeNull();
+        result.Error.Message.ShouldContain("No use case registered");
     }
 
     [Fact]
@@ -55,8 +55,8 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.Equal("Test Result", result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe("Test Result");
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
-        Assert.Equal("Behavior: Test Result", result.CheckedValue);
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe("Behavior: Test Result");
     }
 
     [Fact]
@@ -94,9 +94,65 @@ public class UseCaseDispatcherTests
         var result = await dispatcher.ExecuteAsync<string>(parameter);
 
         // Assert
-        Assert.True(result.ExecutionSucceeded);
+        result.ExecutionSucceeded.ShouldBeTrue();
         // Due to reverse order wrapping in the pipeline, TestBehavior executes first, then TestBehavior2
-        Assert.Equal("Behavior: Behavior2: Test Result", result.CheckedValue);
+        result.CheckedValue.ShouldBe("Behavior: Behavior2: Test Result");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithMockedUseCase_ShouldCallUseCase()
+    {
+        // Arrange - Using FakeItEasy to create mocks
+        var mockUseCase = A.Fake<IUseCase<TestUseCaseParameter, string>>();
+        var expectedResult = Execution.Success("Mocked Result");
+        
+        A.CallTo(() => mockUseCase.ExecuteAsync(A<TestUseCaseParameter>._, A<CancellationToken>._))
+            .Returns(Task.FromResult(expectedResult));
+
+        var services = new ServiceCollection();
+        services.AddSingleton(mockUseCase);
+        var serviceProvider = services.BuildServiceProvider();
+        var dispatcher = new UseCaseDispatcher(serviceProvider);
+        var parameter = new TestUseCaseParameter();
+
+        // Act
+        var result = await dispatcher.ExecuteAsync<string>(parameter);
+
+        // Assert
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe("Mocked Result");
+        
+        // Verify the use case was called with the correct parameter
+        A.CallTo(() => mockUseCase.ExecuteAsync(parameter, A<CancellationToken>._))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithMockedServiceProvider_ShouldHandleServiceResolution()
+    {
+        // Arrange - Using FakeItEasy to mock service provider behavior
+        var mockServiceProvider = A.Fake<IServiceProvider>();
+        var testUseCase = new TestUseCase();
+        
+        // Configure the mock to return our test use case
+        A.CallTo(() => mockServiceProvider.GetService(typeof(IUseCase<TestUseCaseParameter, string>)))
+            .Returns(testUseCase);
+        A.CallTo(() => mockServiceProvider.GetService(typeof(IEnumerable<IExecutionBehavior<TestUseCaseParameter, string>>)))
+            .Returns(Enumerable.Empty<IExecutionBehavior<TestUseCaseParameter, string>>());
+
+        var dispatcher = new UseCaseDispatcher(mockServiceProvider);
+        var parameter = new TestUseCaseParameter();
+
+        // Act
+        var result = await dispatcher.ExecuteAsync<string>(parameter);
+
+        // Assert
+        result.ExecutionSucceeded.ShouldBeTrue();
+        result.CheckedValue.ShouldBe("Test Result");
+        
+        // Verify service provider was called to resolve the use case
+        A.CallTo(() => mockServiceProvider.GetService(typeof(IUseCase<TestUseCaseParameter, string>)))
+            .MustHaveHappenedOnceExactly();
     }
 
     // Test helper classes
