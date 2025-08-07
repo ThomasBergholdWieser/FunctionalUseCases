@@ -64,8 +64,8 @@ public class ExecutionResultExtensionsTests
         // Assert
         loggedResult.ShouldBeSameAs(result);
         A.CallTo(mockLogger)
-            .Where(call => call.Method.Name == "Log" && 
-                          call.Arguments.Count > 0 && 
+            .Where(call => call.Method.Name == "Log" &&
+                          call.Arguments.Count > 0 &&
                           call.Arguments[0].Equals(LogLevel.Error))
             .MustHaveHappened();
         result.Error!.Logged.ShouldBeTrue();
@@ -78,7 +78,7 @@ public class ExecutionResultExtensionsTests
         const string errorMessage = "Test error";
         var result = Execution.Failure(errorMessage);
         var mockLogger = A.Fake<ILogger>();
-        
+
         // Log it first to set the Logged flag
         result.Log(mockLogger);
         Fake.ClearRecordedCalls(mockLogger); // Clear the recorded calls to test the second call
@@ -106,14 +106,14 @@ public class ExecutionResultExtensionsTests
 
         // Assert
         A.CallTo(mockLogger)
-            .Where(call => call.Method.Name == "Log" && 
-                          call.Arguments.Count > 0 && 
+            .Where(call => call.Method.Name == "Log" &&
+                          call.Arguments.Count > 0 &&
                           call.Arguments[0].Equals(LogLevel.Warning))
             .MustHaveHappened();
-            
+
         A.CallTo(mockLogger)
-            .Where(call => call.Method.Name == "Log" && 
-                          call.Arguments.Count > 0 && 
+            .Where(call => call.Method.Name == "Log" &&
+                          call.Arguments.Count > 0 &&
                           call.Arguments[0].Equals(LogLevel.Information))
             .MustHaveHappened();
     }
