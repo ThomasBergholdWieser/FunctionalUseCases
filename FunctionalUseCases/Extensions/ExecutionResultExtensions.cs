@@ -37,7 +37,7 @@ public static class ExecutionResultExtensions
             LogLevel.Warning => LogExtensions.Warning,
             LogLevel.Critical => LogExtensions.Critical,
             LogLevel.None => (_, _) => { }
-            ,
+            LogLevel.None => (_, _) => { },
             _ => throw new ArgumentOutOfRangeException()
         };
 
