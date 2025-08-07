@@ -37,7 +37,7 @@ public class UseCaseDispatcher : IUseCaseDispatcher
         {
             var useCaseParameterType = useCaseParameter.GetType();
             var useCaseType = typeof(IUseCase<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
-            
+
             var useCase = _serviceProvider.GetService(useCaseType);
             if (useCase == null)
             {

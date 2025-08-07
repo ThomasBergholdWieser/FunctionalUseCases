@@ -20,7 +20,7 @@ public class UseCaseDispatcherTests
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentNullException>(() => 
-            dispatcher.ExecuteAsync<string>(null!));
+           dispatcher.ExecuteAsync<string>(null!));
     }
 
     [Fact]

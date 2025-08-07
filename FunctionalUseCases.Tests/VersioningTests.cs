@@ -27,17 +27,17 @@ public class VersioningTests
         // Informational version should contain git commit information (format: 1.0.0+gitcommit)
         informationalVersion.ShouldContain("+");
     }
-    
+
     [Fact]
     public void ThisAssembly_ShouldProvideVersionConstants()
     {
         // This test verifies that Nerdbank.GitVersioning generates the ThisAssembly class
         // We'll use reflection to access it since it's internal
-        
+
         // Arrange
         var assembly = typeof(Execution).Assembly;
         var thisAssemblyType = assembly.GetType("ThisAssembly");
-        
+
         // Act & Assert
         thisAssemblyType.ShouldNotBeNull();
         

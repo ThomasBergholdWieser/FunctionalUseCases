@@ -7,13 +7,13 @@ public static class Execution
     private static readonly ExecutionResult VoidSuccess = new();
 
     public static ExecutionResult<TResult> Success<TResult>(TResult value) where TResult : notnull => value;
-        
+
     public static ExecutionResult Success() =>
         VoidSuccess;
 
     public static ExecutionResult<TResult> Failure<TResult>(IEnumerable<string> messages, int? errorCode = null, LogLevel logLevel = LogLevel.Error) where TResult : notnull =>
         new(new ExecutionError(messages) { ErrorCode = errorCode, LogLevel = logLevel });
-    
+
     public static ExecutionResult Failure(IEnumerable<string> messages, int? errorCode = null, LogLevel logLevel = LogLevel.Error) =>
         new(new ExecutionError(messages) { ErrorCode = errorCode, LogLevel = logLevel });
 
@@ -27,8 +27,8 @@ public static class Execution
         Failure<TResult>(new[] { message }, errorCode, logLevel);
 
     public static ExecutionResult<TResult> Failure<TResult>(ExecutionResult result, int? errorCode = null,
-	    LogLevel logLevel = LogLevel.Error) where TResult : notnull => 
-		Failure<TResult>(result.CheckedError.Messages, result.CheckedError.Logged, errorCode ?? result.CheckedError.ErrorCode, logLevel);
+        LogLevel logLevel = LogLevel.Error) where TResult : notnull =>
+        Failure<TResult>(result.CheckedError.Messages, result.CheckedError.Logged, errorCode ?? result.CheckedError.ErrorCode, logLevel);
 
     public static ExecutionResult Failure(ExecutionResult result, int? errorCode = null, LogLevel logLevel = LogLevel.Error) =>
         Failure(result.CheckedError.Messages, result.CheckedError.Logged, errorCode ?? result.CheckedError.ErrorCode, logLevel);
@@ -49,11 +49,11 @@ public static class Execution
             : Failure(ConcatMessages(results), ConcatErrorCode(results));
 
     private static ExecutionResult<T> Failure<T>(IEnumerable<string> messages, bool logged, int? errorCode, LogLevel logLevel) where T : notnull =>
-	    new(new ExecutionError(messages) { ErrorCode = errorCode, LogLevel = logLevel, Logged = logged });
-
-	private static ExecutionResult Failure(IEnumerable<string> messages, bool logged, int? errorCode, LogLevel logLevel) =>
         new(new ExecutionError(messages) { ErrorCode = errorCode, LogLevel = logLevel, Logged = logged });
-    
+
+    private static ExecutionResult Failure(IEnumerable<string> messages, bool logged, int? errorCode, LogLevel logLevel) =>
+        new(new ExecutionError(messages) { ErrorCode = errorCode, LogLevel = logLevel, Logged = logged });
+
     private static int? ConcatErrorCode<T>(params T[] results)
         where T : ExecutionResult =>
         results.Select(x => x.Error?.ErrorCode).FirstOrDefault(x => x is not null);

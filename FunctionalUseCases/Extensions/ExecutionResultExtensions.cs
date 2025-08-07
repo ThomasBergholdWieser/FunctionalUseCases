@@ -10,7 +10,7 @@ public static class ExecutionResultExtensions
         result.NoLog = true;
         return result;
     }
-    
+
     public static Task<T> AsTask<T>(this T source) where T : ExecutionResult =>
         Task.FromResult(source);
 
@@ -36,7 +36,7 @@ public static class ExecutionResultExtensions
             LogLevel.Information => LogExtensions.Information,
             LogLevel.Warning => LogExtensions.Warning,
             LogLevel.Critical => LogExtensions.Critical,
-            LogLevel.None => (_,_) => {  },
+            LogLevel.None => (_, _) => { },
             _ => throw new ArgumentOutOfRangeException()
         };
 

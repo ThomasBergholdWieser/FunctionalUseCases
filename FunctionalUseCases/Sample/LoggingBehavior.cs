@@ -27,21 +27,21 @@ public class LoggingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TU
         _logger.LogInformation("Starting execution of use case: {UseCaseParameterName} -> {ResultType}", useCaseParameterName, resultTypeName);
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var result = await next().ConfigureAwait(false);
-            
+
             stopwatch.Stop();
-            
+
             if (result.ExecutionSucceeded)
             {
-                _logger.LogInformation("Successfully executed use case: {UseCaseParameterName} -> {ResultType} in {ElapsedMilliseconds}ms", 
+                _logger.LogInformation("Successfully executed use case: {UseCaseParameterName} -> {ResultType} in {ElapsedMilliseconds}ms",
                     useCaseParameterName, resultTypeName, stopwatch.ElapsedMilliseconds);
             }
             else
             {
-                _logger.LogWarning("Use case execution failed: {UseCaseParameterName} -> {ResultType} in {ElapsedMilliseconds}ms. Error: {ErrorMessage}", 
+                _logger.LogWarning("Use case execution failed: {UseCaseParameterName} -> {ResultType} in {ElapsedMilliseconds}ms. Error: {ErrorMessage}",
                     useCaseParameterName, resultTypeName, stopwatch.ElapsedMilliseconds, result.Error?.Message);
             }
 
@@ -50,9 +50,9 @@ public class LoggingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TU
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Exception occurred during use case execution: {UseCaseParameterName} -> {ResultType} in {ElapsedMilliseconds}ms", 
+            _logger.LogError(ex, "Exception occurred during use case execution: {UseCaseParameterName} -> {ResultType} in {ElapsedMilliseconds}ms",
                 useCaseParameterName, resultTypeName, stopwatch.ElapsedMilliseconds);
-            
+
             return Execution.Failure<TResult>($"Exception in LoggingBehavior: {ex.Message}", ex);
         }
     }

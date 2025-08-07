@@ -22,25 +22,25 @@ public class TimingBehavior<TUseCaseParameter, TResult> : IExecutionBehavior<TUs
     public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
     {
         var useCaseParameterName = typeof(TUseCaseParameter).Name;
-        
+
         _logger.LogInformation("[TimingBehavior] Before execution of {UseCaseParameterName}", useCaseParameterName);
-        
+
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var result = await next().ConfigureAwait(false);
             stopwatch.Stop();
-            
-            _logger.LogInformation("[TimingBehavior] After execution of {UseCaseParameterName} - Total time: {ElapsedMilliseconds}ms", 
+
+            _logger.LogInformation("[TimingBehavior] After execution of {UseCaseParameterName} - Total time: {ElapsedMilliseconds}ms",
                 useCaseParameterName, stopwatch.ElapsedMilliseconds);
-            
+
             return result;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "[TimingBehavior] Exception in {UseCaseParameterName} after {ElapsedMilliseconds}ms", 
+            _logger.LogError(ex, "[TimingBehavior] Exception in {UseCaseParameterName} after {ElapsedMilliseconds}ms",
                 useCaseParameterName, stopwatch.ElapsedMilliseconds);
             throw;
         }

@@ -27,7 +27,7 @@ public class SampleUseCaseHandler : IUseCase<SampleUseCase, string>
 
             // Business logic
             var greeting = $"Hello, {useCaseParameter.Name}! Welcome to FunctionalUseCases.";
-            
+
             return Execution.Success(greeting);
         }
         catch (OperationCanceledException)
