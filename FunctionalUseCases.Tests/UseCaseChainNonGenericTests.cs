@@ -1,15 +1,27 @@
 using Microsoft.Extensions.DependencyInjection;
 using FunctionalUseCases.Extensions;
+using FakeItEasy;
 
 namespace FunctionalUseCases.Tests;
 
 public class UseCaseChainNonGenericTests
 {
+    private static IUseCaseDispatcher CreateMockDispatcher()
+    {
+        var mockDispatcher = A.Fake<IUseCaseDispatcher>();
+        var mockServiceProvider = A.Fake<IServiceProvider>();
+        
+        A.CallTo(() => mockDispatcher.ServiceProvider)
+            .Returns(mockServiceProvider);
+            
+        return mockDispatcher;
+    }
+
     [Fact]
     public void Chain_EmptyChain_ShouldStartWithNonGenericChain()
     {
         // Arrange
-        var dispatcher = A.Fake<IUseCaseDispatcher>();
+        var dispatcher = CreateMockDispatcher();
 
         // Act
         var chain = dispatcher.StartWith();
