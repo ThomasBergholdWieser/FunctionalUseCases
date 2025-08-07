@@ -12,7 +12,7 @@ public class UseCaseChainNonGenericTests
         var dispatcher = A.Fake<IUseCaseDispatcher>();
 
         // Act
-        var chain = dispatcher.Chain();
+        var chain = dispatcher.StartWith();
 
         // Assert
         chain.ShouldNotBeNull();
@@ -29,7 +29,7 @@ public class UseCaseChainNonGenericTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         var typedChain = dispatcher
-            .Chain()
+            .StartWith()
             .Then(new VoidUseCaseParameter());
 
         // Act
@@ -52,7 +52,7 @@ public class UseCaseChainNonGenericTests
         var errorHandlerCalled = false;
 
         var chain = dispatcher
-            .Chain()
+            .StartWith()
             .Then(new FailingVoidParameter())
             .OnError(error =>
             {

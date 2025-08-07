@@ -12,12 +12,16 @@ public class UseCaseChain<TResult>
     where TResult : notnull
 {
     private readonly IUseCaseDispatcher _dispatcher;
+    private readonly ITransactionManager? _transactionManager;
+    private readonly ILogger? _logger;
     internal readonly List<Func<object?, CancellationToken, Task<(bool Success, object? Result, ExecutionError? Error)>>> _steps;
     private Func<ExecutionError, CancellationToken, Task<ExecutionResult<TResult>>>? _errorHandler;
 
-    internal UseCaseChain(IUseCaseDispatcher dispatcher)
+    internal UseCaseChain(IUseCaseDispatcher dispatcher, ITransactionManager? transactionManager = null, ILogger? logger = null)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _transactionManager = transactionManager;
+        _logger = logger;
         _steps = new List<Func<object?, CancellationToken, Task<(bool Success, object? Result, ExecutionError? Error)>>>();
     }
 
@@ -35,7 +39,7 @@ public class UseCaseChain<TResult>
             throw new ArgumentNullException(nameof(useCaseParameter));
         }
 
-        var newChain = new UseCaseChain<TNextResult>(_dispatcher);
+        var newChain = new UseCaseChain<TNextResult>(_dispatcher, _transactionManager, _logger);
 
         // Copy existing steps
         newChain._steps.AddRange(_steps);
@@ -71,7 +75,7 @@ public class UseCaseChain<TResult>
             throw new ArgumentNullException(nameof(useCaseParameterFactory));
         }
 
-        var newChain = new UseCaseChain<TNextResult>(_dispatcher);
+        var newChain = new UseCaseChain<TNextResult>(_dispatcher, _transactionManager, _logger);
 
         // Copy existing steps
         newChain._steps.AddRange(_steps);
@@ -133,6 +137,7 @@ public class UseCaseChain<TResult>
     /// Executes the entire chain of use cases sequentially.
     /// Execution stops on the first failure unless an error handler is provided.
     /// Results are passed between use cases in the chain.
+    /// If a transaction manager is provided, the entire chain executes within a single transaction.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The final execution result.</returns>
@@ -143,10 +148,18 @@ public class UseCaseChain<TResult>
             return Execution.Failure<TResult>("Chain is empty. Add at least one use case using Then().");
         }
 
+        ITransaction? transaction = null;
         object? currentResult = null;
 
         try
         {
+            // Begin transaction if transaction manager is available
+            if (_transactionManager != null)
+            {
+                transaction = await _transactionManager.BeginTransactionAsync(cancellationToken);
+                _logger?.LogDebug("Transaction started for use case chain");
+            }
+
             // Execute each step in the chain, passing results between steps
             for (int i = 0; i < _steps.Count; i++)
             {
@@ -157,6 +170,13 @@ public class UseCaseChain<TResult>
 
                 if (!success)
                 {
+                    // Rollback transaction on failure
+                    if (transaction != null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        _logger?.LogDebug("Transaction rolled back due to use case chain failure");
+                    }
+
                     // If we have an error handler, use it
                     if (_errorHandler != null && error != null)
                     {
@@ -171,6 +191,13 @@ public class UseCaseChain<TResult>
                 currentResult = result;
             }
 
+            // Commit transaction on success
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+                _logger?.LogDebug("Transaction committed for use case chain");
+            }
+
             // All steps succeeded, return the final result
             if (currentResult is TResult finalResult)
             {
@@ -182,10 +209,38 @@ public class UseCaseChain<TResult>
         }
         catch (OperationCanceledException)
         {
+            // Rollback transaction on cancellation
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.RollbackAsync(CancellationToken.None);
+                    _logger?.LogDebug("Transaction rolled back due to cancellation");
+                }
+                catch (Exception rollbackEx)
+                {
+                    _logger?.LogError(rollbackEx, "Failed to rollback transaction during cancellation");
+                }
+            }
+            
             return Execution.Failure<TResult>("Chain execution was cancelled.");
         }
         catch (Exception ex)
         {
+            // Rollback transaction on exception
+            if (transaction != null)
+            {
+                try
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    _logger?.LogDebug("Transaction rolled back due to exception");
+                }
+                catch (Exception rollbackEx)
+                {
+                    _logger?.LogError(rollbackEx, "Failed to rollback transaction during exception handling");
+                }
+            }
+
             // If we have an error handler, use it for exceptions too
             if (_errorHandler != null)
             {
@@ -194,6 +249,11 @@ public class UseCaseChain<TResult>
             }
 
             return Execution.Failure<TResult>($"Exception during chain execution: {ex.Message}", ex);
+        }
+        finally
+        {
+            // Ensure transaction is disposed
+            transaction?.Dispose();
         }
     }
 }
@@ -204,12 +264,16 @@ public class UseCaseChain<TResult>
 public class UseCaseChain
 {
     private readonly IUseCaseDispatcher _dispatcher;
+    private readonly ITransactionManager? _transactionManager;
+    private readonly ILogger? _logger;
     private readonly List<Func<object?, CancellationToken, Task<(bool Success, object? Result, ExecutionError? Error)>>> _steps;
     private Func<ExecutionError, CancellationToken, Task<ExecutionResult>>? _errorHandler;
 
-    internal UseCaseChain(IUseCaseDispatcher dispatcher)
+    internal UseCaseChain(IUseCaseDispatcher dispatcher, ITransactionManager? transactionManager = null, ILogger? logger = null)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _transactionManager = transactionManager;
+        _logger = logger;
         _steps = new List<Func<object?, CancellationToken, Task<(bool Success, object? Result, ExecutionError? Error)>>>();
     }
 
@@ -227,7 +291,7 @@ public class UseCaseChain
             throw new ArgumentNullException(nameof(useCaseParameter));
         }
 
-        var newChain = new UseCaseChain<TResult>(_dispatcher);
+        var newChain = new UseCaseChain<TResult>(_dispatcher, _transactionManager, _logger);
 
         // Copy existing steps
         newChain._steps.AddRange(_steps);

@@ -100,7 +100,28 @@ if (!string.IsNullOrEmpty(name))
     }
 }
 
+Console.WriteLine("\n=== Testing Result Passing ===");
+await TestResultPassing(dispatcher);
+
 Console.WriteLine("\nNote: Execution behaviors (TimingBehavior, LoggingBehavior) are registered using");
 Console.WriteLine("services.AddScoped(typeof(IExecutionBehavior<,>), typeof(MyBehavior<,>)) for generic registration.");
 Console.WriteLine("Use case chaining allows sequential execution with fluent syntax and error handling.");
 Console.WriteLine("\nDone!");
+
+static async Task TestResultPassing(IUseCaseDispatcher dispatcher)
+{
+    // Test the result passing functionality
+    var resultPassingChain = await dispatcher
+        .StartWith(new SampleUseCase("FirstStep"))
+        .Then(result => new SampleUseCase($"SecondStep-{result.Length}"))
+        .ExecuteAsync();
+
+    if (resultPassingChain.ExecutionSucceeded)
+    {
+        Console.WriteLine($"✅ Result passing test success: {resultPassingChain.CheckedValue}");
+    }
+    else
+    {
+        Console.WriteLine($"❌ Result passing test failed: {resultPassingChain.Error?.Message}");
+    }
+}

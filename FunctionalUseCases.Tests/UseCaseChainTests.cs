@@ -9,25 +9,25 @@ public class UseCaseChainTests
     public void Constructor_WithNullDispatcher_ShouldThrowArgumentNullException()
     {
         // Act & Assert - Test the extension method instead since constructor is internal
-        Should.Throw<ArgumentNullException>(() => ((IUseCaseDispatcher)null!).Chain(new TestUseCaseParameter()));
+        Should.Throw<ArgumentNullException>(() => ((IUseCaseDispatcher)null!).StartWith(new TestUseCaseParameter()));
     }
 
     [Fact]
-    public void ChainExtension_WithNullDispatcher_ShouldThrowArgumentNullException()
+    public void StartWithExtension_WithNullDispatcher_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Should.Throw<ArgumentNullException>(() => ((IUseCaseDispatcher)null!).Chain());
-        Should.Throw<ArgumentNullException>(() => ((IUseCaseDispatcher)null!).Chain(new TestUseCaseParameter()));
+        Should.Throw<ArgumentNullException>(() => ((IUseCaseDispatcher)null!).StartWith());
+        Should.Throw<ArgumentNullException>(() => ((IUseCaseDispatcher)null!).StartWith(new TestUseCaseParameter()));
     }
 
     [Fact]
-    public void ChainExtension_WithNullParameter_ShouldThrowArgumentNullException()
+    public void StartWithExtension_WithNullParameter_ShouldThrowArgumentNullException()
     {
         // Arrange
         var dispatcher = A.Fake<IUseCaseDispatcher>();
 
         // Act & Assert
-        Should.Throw<ArgumentNullException>(() => dispatcher.Chain<string>(null!));
+        Should.Throw<ArgumentNullException>(() => dispatcher.StartWith<string>(null!));
     }
 
     [Fact]
@@ -38,11 +38,11 @@ public class UseCaseChainTests
         // Since we can't create an empty typed chain directly, we'll use a chain with Then() to test this
 
         // Actually, we can't test this scenario easily since the API doesn't allow creating an empty typed chain
-        // The extension method Chain<T>() always requires a use case parameter
+        // The extension method StartWith<T>() always requires a use case parameter
         // Let's test that the extension method validates null parameters instead
 
         // Act & Assert
-        Should.Throw<ArgumentNullException>(() => dispatcher.Chain<string>(null!));
+        Should.Throw<ArgumentNullException>(() => dispatcher.StartWith<string>(null!));
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class UseCaseChainTests
         var serviceProvider = services.BuildServiceProvider();
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
-        var chain = dispatcher.Chain(new TestUseCaseParameter());
+        var chain = dispatcher.StartWith(new TestUseCaseParameter());
 
         // Act
         var result = await chain.ExecuteAsync();
@@ -75,7 +75,7 @@ public class UseCaseChainTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         var chain = dispatcher
-            .Chain(new TestUseCaseParameter())
+            .StartWith(new TestUseCaseParameter())
             .Then(new StringToIntParameter());
 
         // Act
@@ -97,7 +97,7 @@ public class UseCaseChainTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         var chain = dispatcher
-            .Chain(new FailingUseCaseParameter())
+            .StartWith(new FailingUseCaseParameter())
             .Then(new StringToIntParameter());
 
         // Act
@@ -120,7 +120,7 @@ public class UseCaseChainTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         var chain = dispatcher
-            .Chain(new TestUseCaseParameter())
+            .StartWith(new TestUseCaseParameter())
             .Then(new FailingIntParameter());
 
         // Act
@@ -145,7 +145,7 @@ public class UseCaseChainTests
         ExecutionError? capturedError = null;
 
         var chain = dispatcher
-            .Chain(new FailingUseCaseParameter())
+            .StartWith(new FailingUseCaseParameter())
             .OnError(error =>
             {
                 errorHandlerCalled = true;
@@ -178,7 +178,7 @@ public class UseCaseChainTests
         CancellationToken capturedToken = default;
 
         var chain = dispatcher
-            .Chain(new FailingUseCaseParameter())
+            .StartWith(new FailingUseCaseParameter())
             .OnError((error, cancellationToken) =>
             {
                 errorHandlerCalled = true;
@@ -214,7 +214,7 @@ public class UseCaseChainTests
             .Returns(Task.FromResult(Execution.Success(123)));
 
         var chain = mockDispatcher
-            .Chain(parameter1)
+            .StartWith(parameter1)
             .Then(parameter2);
 
         // Act
@@ -240,7 +240,7 @@ public class UseCaseChainTests
         var serviceProvider = services.BuildServiceProvider();
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
-        var chain = dispatcher.Chain(new DelayedUseCaseParameter());
+        var chain = dispatcher.StartWith(new DelayedUseCaseParameter());
         var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(50)); // Cancel quickly
 
@@ -267,7 +267,7 @@ public class UseCaseChainTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         var chain = dispatcher
-            .Chain(new TestUseCaseParameter())
+            .StartWith(new TestUseCaseParameter())
             .Then(new StringToIntParameter());
 
         // Act
@@ -283,10 +283,10 @@ public class UseCaseChainTests
     {
         // Arrange
         var dispatcher = A.Fake<IUseCaseDispatcher>();
-        var chain = dispatcher.Chain(new TestUseCaseParameter());
+        var chain = dispatcher.StartWith(new TestUseCaseParameter());
 
         // Act & Assert
-        Should.Throw<ArgumentNullException>(() => chain.Then<int>(null!));
+        Should.Throw<ArgumentNullException>(() => chain.Then((IUseCaseParameter<int>)null!));
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public class UseCaseChainTests
     {
         // Arrange
         var dispatcher = A.Fake<IUseCaseDispatcher>();
-        var chain = dispatcher.Chain(new TestUseCaseParameter());
+        var chain = dispatcher.StartWith(new TestUseCaseParameter());
 
         // Act & Assert
         Should.Throw<ArgumentNullException>(() => chain.OnError((Func<ExecutionError, Task<ExecutionResult<string>>>)null!));

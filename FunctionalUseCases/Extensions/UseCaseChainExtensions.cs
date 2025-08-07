@@ -11,8 +11,13 @@ public static class UseCaseChainExtensions
     /// <typeparam name="TResult">The result type of the first use case.</typeparam>
     /// <param name="dispatcher">The use case dispatcher.</param>
     /// <param name="useCaseParameter">The first use case parameter to execute.</param>
+    /// <param name="transactionManager">Optional transaction manager for chain-level transactions.</param>
+    /// <param name="logger">Optional logger for transaction logging.</param>
     /// <returns>A new use case chain.</returns>
-    public static UseCaseChain<TResult> StartWith<TResult>(this IUseCaseDispatcher dispatcher, IUseCaseParameter<TResult> useCaseParameter)
+    public static UseCaseChain<TResult> StartWith<TResult>(this IUseCaseDispatcher dispatcher, 
+        IUseCaseParameter<TResult> useCaseParameter,
+        ITransactionManager? transactionManager = null,
+        Microsoft.Extensions.Logging.ILogger? logger = null)
         where TResult : notnull
     {
         if (dispatcher == null)
@@ -25,7 +30,7 @@ public static class UseCaseChainExtensions
             throw new ArgumentNullException(nameof(useCaseParameter));
         }
 
-        var chain = new UseCaseChain<TResult>(dispatcher);
+        var chain = new UseCaseChain<TResult>(dispatcher, transactionManager, logger);
         return chain.Then(useCaseParameter);
     }
 
@@ -34,14 +39,18 @@ public static class UseCaseChainExtensions
     /// Use Then() to add use cases to the chain.
     /// </summary>
     /// <param name="dispatcher">The use case dispatcher.</param>
+    /// <param name="transactionManager">Optional transaction manager for chain-level transactions.</param>
+    /// <param name="logger">Optional logger for transaction logging.</param>
     /// <returns>A new empty use case chain.</returns>
-    public static UseCaseChain StartWith(this IUseCaseDispatcher dispatcher)
+    public static UseCaseChain StartWith(this IUseCaseDispatcher dispatcher,
+        ITransactionManager? transactionManager = null,
+        Microsoft.Extensions.Logging.ILogger? logger = null)
     {
         if (dispatcher == null)
         {
             throw new ArgumentNullException(nameof(dispatcher));
         }
 
-        return new UseCaseChain(dispatcher);
+        return new UseCaseChain(dispatcher, transactionManager, logger);
     }
 }
