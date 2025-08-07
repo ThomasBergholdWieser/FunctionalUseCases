@@ -7,7 +7,6 @@
     
     <!-- NuGet Package Information -->
     <PackageId>FunctionalUseCases</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Authors>Thomas Berghold-Wieser</Authors>
     <Description>A complete .NET solution that implements functional processing of use cases using the Mediator pattern with advanced ExecutionResult error handling. This library provides a clean way to organize business logic into discrete, testable use cases with sophisticated dependency injection support and functional error handling patterns.</Description>
     <PackageProjectUrl>https://github.com/ThomasBergholdWieser/FunctionalUseCases</PackageProjectUrl>
