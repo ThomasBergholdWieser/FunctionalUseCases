@@ -68,12 +68,12 @@ class Program
 
         Console.WriteLine("=== Use Case Chaining Example ===\n");
 
-        // Example 1: Successful chain
-        Console.WriteLine("1. Successful chain execution:");
+        // Example 1: Successful chain with result passing
+        Console.WriteLine("1. Successful chain execution with result passing:");
         var successResult = await dispatcher
-            .Chain(new GetUserParameter(1))
-            .Then(new ValidateUserParameter(new User(1, "John Doe", "john@example.com", true)))
-            .Then(new SendWelcomeEmailParameter(new User(1, "John Doe", "john@example.com", true)))
+            .StartWith(new GetUserParameter(1))
+            .Then(user => new ValidateUserParameter(user))
+            .Then(user => new SendWelcomeEmailParameter(user))
             .ExecuteAsync();
 
         if (successResult.ExecutionSucceeded)
@@ -90,9 +90,9 @@ class Program
         // Example 2: Chain with error and error handling
         Console.WriteLine("2. Chain with error and error handling:");
         var errorResult = await dispatcher
-            .Chain(new GetUserParameter(2))
-            .Then(new ValidateUserParameter(new User(2, "Jane Doe", "", false))) // Invalid user
-            .Then(new SendWelcomeEmailParameter(new User(2, "Jane Doe", "", false)))
+            .StartWith(new GetUserParameter(2))
+            .Then(user => new ValidateUserParameter(new User(user.Id, user.Name, "", false))) // Invalid user - no email
+            .Then(user => new SendWelcomeEmailParameter(user))
             .OnError(error =>
             {
                 Console.WriteLine($"   Error handler called: {error.Message}");
@@ -115,9 +115,9 @@ class Program
         // Example 3: Chain without error handling (fails fast)
         Console.WriteLine("3. Chain without error handling (fails fast):");
         var failFastResult = await dispatcher
-            .Chain(new GetUserParameter(3))
-            .Then(new ValidateUserParameter(new User(3, "Bob Smith", "", false))) // Invalid user
-            .Then(new SendWelcomeEmailParameter(new User(3, "Bob Smith", "", false)))
+            .StartWith(new GetUserParameter(3))
+            .Then(user => new ValidateUserParameter(new User(user.Id, user.Name, "", false))) // Invalid user - no email
+            .Then(user => new SendWelcomeEmailParameter(user))
             .ExecuteAsync();
 
         if (failFastResult.ExecutionSucceeded)

@@ -60,7 +60,7 @@ Console.WriteLine();
 // Example 3: Use Case Chaining
 Console.WriteLine("Example 3: Use Case Chaining");
 var chainResult = await dispatcher
-    .Chain(new SampleUseCase("Chain"))
+    .StartWith(new SampleUseCase("Chain"))
     .Then(new SampleUseCase("Example"))
     .OnError(error =>
     {

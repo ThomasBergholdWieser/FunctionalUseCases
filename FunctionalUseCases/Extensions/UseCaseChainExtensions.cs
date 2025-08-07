@@ -12,7 +12,7 @@ public static class UseCaseChainExtensions
     /// <param name="dispatcher">The use case dispatcher.</param>
     /// <param name="useCaseParameter">The first use case parameter to execute.</param>
     /// <returns>A new use case chain.</returns>
-    public static UseCaseChain<TResult> Chain<TResult>(this IUseCaseDispatcher dispatcher, IUseCaseParameter<TResult> useCaseParameter)
+    public static UseCaseChain<TResult> StartWith<TResult>(this IUseCaseDispatcher dispatcher, IUseCaseParameter<TResult> useCaseParameter)
         where TResult : notnull
     {
         if (dispatcher == null)
@@ -35,7 +35,7 @@ public static class UseCaseChainExtensions
     /// </summary>
     /// <param name="dispatcher">The use case dispatcher.</param>
     /// <returns>A new empty use case chain.</returns>
-    public static UseCaseChain Chain(this IUseCaseDispatcher dispatcher)
+    public static UseCaseChain StartWith(this IUseCaseDispatcher dispatcher)
     {
         if (dispatcher == null)
         {
