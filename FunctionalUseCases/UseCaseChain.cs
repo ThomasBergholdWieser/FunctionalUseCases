@@ -33,10 +33,10 @@ public class UseCaseChain<TResult>
         }
 
         var newChain = new UseCaseChain<TNextResult>(_dispatcher);
-        
+
         // Copy existing steps
         newChain._steps.AddRange(_steps);
-        
+
         // Add the new step
         newChain._steps.Add(async cancellationToken =>
         {
@@ -97,7 +97,7 @@ public class UseCaseChain<TResult>
             foreach (var step in _steps)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
                 var stepResult = await step(cancellationToken);
                 lastResult = stepResult;
 
@@ -111,7 +111,7 @@ public class UseCaseChain<TResult>
                     }
 
                     // Otherwise, return the failure result
-                    return Execution.Failure<TResult>(stepResult.CheckedError.Messages, 
+                    return Execution.Failure<TResult>(stepResult.CheckedError.Messages,
                         stepResult.CheckedError.ErrorCode, stepResult.CheckedError.LogLevel);
                 }
             }
@@ -174,10 +174,10 @@ public class UseCaseChain
         }
 
         var newChain = new UseCaseChain<TResult>(_dispatcher);
-        
+
         // Copy existing steps
         newChain._steps.AddRange(_steps);
-        
+
         // Add the new step
         newChain._steps.Add(async cancellationToken =>
         {
@@ -236,7 +236,7 @@ public class UseCaseChain
             foreach (var step in _steps)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
                 var stepResult = await step(cancellationToken);
 
                 // Stop execution on first failure

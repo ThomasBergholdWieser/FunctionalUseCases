@@ -36,11 +36,11 @@ public class UseCaseChainTests
         // Arrange
         var dispatcher = A.Fake<IUseCaseDispatcher>();
         // Since we can't create an empty typed chain directly, we'll use a chain with Then() to test this
-        
+
         // Actually, we can't test this scenario easily since the API doesn't allow creating an empty typed chain
         // The extension method Chain<T>() always requires a use case parameter
         // Let's test that the extension method validates null parameters instead
-        
+
         // Act & Assert
         Should.Throw<ArgumentNullException>(() => dispatcher.Chain<string>(null!));
     }

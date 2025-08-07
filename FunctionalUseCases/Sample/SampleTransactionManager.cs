@@ -42,7 +42,7 @@ public class SampleTransaction : ITransaction
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SampleTransaction));
-        
+
         if (_committed || _rolledBack)
             throw new InvalidOperationException("Transaction has already been committed or rolled back");
 
@@ -55,7 +55,7 @@ public class SampleTransaction : ITransaction
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SampleTransaction));
-        
+
         if (_committed || _rolledBack)
             throw new InvalidOperationException("Transaction has already been committed or rolled back");
 
@@ -68,7 +68,7 @@ public class SampleTransaction : ITransaction
     {
         if (!_disposed)
         {
-            _logger.LogDebug("Disposing sample transaction (Committed: {Committed}, RolledBack: {RolledBack})", 
+            _logger.LogDebug("Disposing sample transaction (Committed: {Committed}, RolledBack: {RolledBack})",
                 _committed, _rolledBack);
             _disposed = true;
         }
