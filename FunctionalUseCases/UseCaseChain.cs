@@ -57,6 +57,27 @@ public class UseCaseChain<TResult>
     }
 
     /// <summary>
+    /// Adds a behavior to this use case chain using an open generic type definition.
+    /// The behavior will be applied to all use cases in the chain.
+    /// </summary>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
+    /// <returns>A new chain with the behavior added.</returns>
+    public UseCaseChain<TResult> WithBehavior(Type behaviorType)
+    {
+        if (behaviorType == null)
+        {
+            throw new ArgumentNullException(nameof(behaviorType));
+        }
+
+        if (!behaviorType.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException("Behavior type must be an open generic type definition (e.g., typeof(MyBehavior<,>))", nameof(behaviorType));
+        }
+
+        return WithBehavior(new OpenGenericBehaviorDescriptor(behaviorType));
+    }
+
+    /// <summary>
     /// Adds a behavior instance to this use case chain.
     /// The behavior will be applied to all use cases in the chain.
     /// </summary>
@@ -392,6 +413,27 @@ public class UseCaseChain
     {
         var behavior = _serviceProvider.GetRequiredService<TBehavior>();
         return WithBehavior(behavior);
+    }
+
+    /// <summary>
+    /// Adds a behavior to this use case chain using an open generic type definition.
+    /// The behavior will be applied to all use cases in the chain.
+    /// </summary>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
+    /// <returns>A new chain with the behavior added.</returns>
+    public UseCaseChain WithBehavior(Type behaviorType)
+    {
+        if (behaviorType == null)
+        {
+            throw new ArgumentNullException(nameof(behaviorType));
+        }
+
+        if (!behaviorType.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException("Behavior type must be an open generic type definition (e.g., typeof(MyBehavior<,>))", nameof(behaviorType));
+        }
+
+        return WithBehavior(new OpenGenericBehaviorDescriptor(behaviorType));
     }
 
     /// <summary>

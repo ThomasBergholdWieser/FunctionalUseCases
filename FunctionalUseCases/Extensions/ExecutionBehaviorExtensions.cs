@@ -30,6 +30,25 @@ public static class ExecutionBehaviorExtensions
     }
 
     /// <summary>
+    /// Creates an execution context with a behavior using an open generic type definition for per-call execution.
+    /// This allows behaviors to be applied to specific use case executions without specifying concrete type parameters.
+    /// </summary>
+    /// <param name="dispatcher">The use case dispatcher.</param>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
+    /// <returns>An execution context with the specified behavior.</returns>
+    public static IExecutionContext WithBehavior(this IUseCaseDispatcher dispatcher, Type behaviorType)
+    {
+        if (dispatcher == null)
+        {
+            throw new ArgumentNullException(nameof(dispatcher));
+        }
+
+        var serviceProvider = GetServiceProvider(dispatcher);
+        var context = new ExecutionContext(dispatcher, serviceProvider);
+        return context.WithBehavior(behaviorType);
+    }
+
+    /// <summary>
     /// Creates an execution context with a specific behavior instance for per-call execution.
     /// </summary>
     /// <param name="dispatcher">The use case dispatcher.</param>
@@ -71,6 +90,26 @@ public static class ExecutionBehaviorExtensions
         var serviceProvider = GetServiceProvider(dispatcher);
         var context = new ExecutionContext<TResult>(dispatcher, serviceProvider);
         return context.WithBehavior<TBehavior>();
+    }
+
+    /// <summary>
+    /// Creates a typed execution context with a behavior using an open generic type definition for per-call execution.
+    /// </summary>
+    /// <typeparam name="TResult">The result type of the execution.</typeparam>
+    /// <param name="dispatcher">The use case dispatcher.</param>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
+    /// <returns>A typed execution context with the specified behavior.</returns>
+    public static IExecutionContext<TResult> WithBehavior<TResult>(this IUseCaseDispatcher dispatcher, Type behaviorType)
+        where TResult : notnull
+    {
+        if (dispatcher == null)
+        {
+            throw new ArgumentNullException(nameof(dispatcher));
+        }
+
+        var serviceProvider = GetServiceProvider(dispatcher);
+        var context = new ExecutionContext<TResult>(dispatcher, serviceProvider);
+        return context.WithBehavior(behaviorType);
     }
 
     /// <summary>

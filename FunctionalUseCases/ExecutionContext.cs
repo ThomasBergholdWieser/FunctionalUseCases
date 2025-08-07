@@ -3,6 +3,19 @@ using Microsoft.Extensions.DependencyInjection;
 namespace FunctionalUseCases;
 
 /// <summary>
+/// Represents an open generic behavior type that will be resolved at execution time.
+/// </summary>
+internal class OpenGenericBehaviorDescriptor
+{
+    public Type OpenGenericType { get; }
+
+    public OpenGenericBehaviorDescriptor(Type openGenericType)
+    {
+        OpenGenericType = openGenericType ?? throw new ArgumentNullException(nameof(openGenericType));
+    }
+}
+
+/// <summary>
 /// Implementation of execution context that manages per-call behaviors.
 /// </summary>
 /// <typeparam name="TResult">The result type of the execution.</typeparam>
@@ -32,6 +45,22 @@ internal class ExecutionContext<TResult> : IExecutionContext<TResult>
     {
         var behavior = _serviceProvider.GetRequiredService<TBehavior>();
         return WithBehavior(behavior);
+    }
+
+    public IExecutionContext<TResult> WithBehavior(Type behaviorType)
+    {
+        if (behaviorType == null)
+        {
+            throw new ArgumentNullException(nameof(behaviorType));
+        }
+
+        if (!behaviorType.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException("Behavior type must be an open generic type definition (e.g., typeof(MyBehavior<,>))", nameof(behaviorType));
+        }
+
+        // Store the open generic type - we'll resolve it when we know the concrete parameter and result types
+        return WithBehavior(new OpenGenericBehaviorDescriptor(behaviorType));
     }
 
     public IExecutionContext<TResult> WithBehavior(object behavior)
@@ -74,10 +103,38 @@ internal class ExecutionContext<TResult> : IExecutionContext<TResult>
             var behaviorType = typeof(IExecutionBehavior<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
             var globalBehaviors = _serviceProvider.GetServices(behaviorType).ToArray();
 
-            // Filter per-call behaviors for this use case parameter type
-            var applicablePerCallBehaviors = _perCallBehaviors
-                .Where(b => behaviorType.IsInstanceOfType(b))
-                .ToArray();
+            // Process per-call behaviors - resolve open generic types and filter for applicable ones
+            var applicablePerCallBehaviors = new List<object>();
+            foreach (var behavior in _perCallBehaviors)
+            {
+                if (behavior is OpenGenericBehaviorDescriptor descriptor)
+                {
+                    // Resolve the open generic type with the current parameter and result types
+                    try
+                    {
+                        var concreteType = descriptor.OpenGenericType.MakeGenericType(useCaseParameterType, typeof(TResult));
+                        var resolvedBehavior = _serviceProvider.GetService(concreteType);
+                        if (resolvedBehavior != null)
+                        {
+                            applicablePerCallBehaviors.Add(resolvedBehavior);
+                        }
+                        else
+                        {
+                            return Execution.Failure<TResult>($"Failed to resolve open generic behavior {descriptor.OpenGenericType.Name}<{useCaseParameterType.Name},{typeof(TResult).Name}>: Service not registered");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log and skip behaviors that can't be resolved
+                        return Execution.Failure<TResult>($"Failed to resolve open generic behavior {descriptor.OpenGenericType.Name}: {ex.Message}", ex);
+                    }
+                }
+                else if (behaviorType.IsInstanceOfType(behavior))
+                {
+                    // Handle concrete behavior instances
+                    applicablePerCallBehaviors.Add(behavior);
+                }
+            }
 
             // Combine global and per-call behaviors (per-call behaviors run first)
             var allBehaviors = applicablePerCallBehaviors.Concat(globalBehaviors).ToArray();
@@ -174,6 +231,22 @@ internal class ExecutionContext : IExecutionContext
     {
         var behavior = _serviceProvider.GetRequiredService<TBehavior>();
         return WithBehavior(behavior);
+    }
+
+    public IExecutionContext WithBehavior(Type behaviorType)
+    {
+        if (behaviorType == null)
+        {
+            throw new ArgumentNullException(nameof(behaviorType));
+        }
+
+        if (!behaviorType.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException("Behavior type must be an open generic type definition (e.g., typeof(MyBehavior<,>))", nameof(behaviorType));
+        }
+
+        // Store the open generic type - we'll resolve it when we know the concrete parameter and result types
+        return WithBehavior(new OpenGenericBehaviorDescriptor(behaviorType));
     }
 
     public IExecutionContext WithBehavior(object behavior)

@@ -83,8 +83,8 @@ else
 
 Console.WriteLine();
 
-// Example 4: WithBehavior - Per-call transaction behavior
-Console.WriteLine("Example 4: WithBehavior - Per-call transaction behavior");
+// Example 4: WithBehavior - Per-call transaction behavior (Legacy concrete type API)
+Console.WriteLine("Example 4: WithBehavior - Per-call transaction behavior (Legacy concrete type API)");
 try
 {
     var transactionResult = await dispatcher
@@ -107,8 +107,32 @@ catch (Exception ex)
 
 Console.WriteLine();
 
-// Example 5: Use Case Chain with WithBehavior
-Console.WriteLine("Example 5: Use Case Chain with WithBehavior");
+// Example 4b: WithBehavior - Per-call transaction behavior (New open generic API)
+Console.WriteLine("Example 4b: WithBehavior - Per-call transaction behavior (New open generic API)");
+try
+{
+    var transactionResult = await dispatcher
+        .WithBehavior(typeof(TransactionBehavior<,>))
+        .ExecuteAsync(new SampleUseCase("TransactionGeneric"));
+        
+    if (transactionResult.ExecutionSucceeded)
+    {
+        Console.WriteLine($"✅ Transaction Success (Open Generic): {transactionResult.CheckedValue}");
+    }
+    else
+    {
+        Console.WriteLine($"❌ Transaction Error (Open Generic): {transactionResult.Error?.Message}");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Transaction behavior not available (expected): {ex.Message}");
+}
+
+Console.WriteLine();
+
+// Example 5: Use Case Chain with WithBehavior (Legacy concrete type API)
+Console.WriteLine("Example 5: Use Case Chain with WithBehavior (Legacy concrete type API)");
 try
 {
     var chainWithBehaviorResult = await dispatcher
@@ -124,6 +148,32 @@ try
     else
     {
         Console.WriteLine($"❌ Chain with Behavior Error: {chainWithBehaviorResult.Error?.Message}");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Chain with transaction behavior not available (expected): {ex.Message}");
+}
+
+Console.WriteLine();
+
+// Example 5b: Use Case Chain with WithBehavior (New open generic API)
+Console.WriteLine("Example 5b: Use Case Chain with WithBehavior (New open generic API)");
+try
+{
+    var chainWithBehaviorResult = await dispatcher
+        .StartWith(new SampleUseCase("ChainWithGeneric"))
+        .WithBehavior(typeof(TransactionBehavior<,>))
+        .Then(new SampleUseCase("BehaviorGeneric"))
+        .ExecuteAsync();
+        
+    if (chainWithBehaviorResult.ExecutionSucceeded)
+    {
+        Console.WriteLine($"✅ Chain with Behavior Success (Open Generic): {chainWithBehaviorResult.CheckedValue}");
+    }
+    else
+    {
+        Console.WriteLine($"❌ Chain with Behavior Error (Open Generic): {chainWithBehaviorResult.Error?.Message}");
     }
 }
 catch (Exception ex)
@@ -158,7 +208,9 @@ await TestResultPassing(dispatcher);
 
 Console.WriteLine("\nNote: Execution behaviors (TimingBehavior, LoggingBehavior) are registered using");
 Console.WriteLine("services.AddScoped(typeof(IExecutionBehavior<,>), typeof(MyBehavior<,>)) for global behaviors.");
-Console.WriteLine("Per-call behaviors can be added using .WithBehavior<T>() for specific executions.");
+Console.WriteLine("Per-call behaviors can be added using:");
+Console.WriteLine("  - .WithBehavior<ConcreteType>() for specific behavior types");
+Console.WriteLine("  - .WithBehavior(typeof(OpenGeneric<,>)) for open generic behaviors (NEW!)");
 Console.WriteLine("Use case chaining allows sequential execution with fluent syntax and error handling.");
 Console.WriteLine("Transaction behaviors can be applied per-call and are chain-aware.");
 Console.WriteLine("\nDone!");

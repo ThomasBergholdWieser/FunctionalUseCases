@@ -18,6 +18,14 @@ public interface IExecutionContext<TResult>
         where TBehavior : class;
 
     /// <summary>
+    /// Adds a behavior to this execution context using an open generic type definition.
+    /// This allows for more flexible behavior registration without requiring concrete type parameters.
+    /// </summary>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
+    /// <returns>The execution context with the behavior added.</returns>
+    IExecutionContext<TResult> WithBehavior(Type behaviorType);
+
+    /// <summary>
     /// Adds a behavior instance to this execution context.
     /// </summary>
     /// <param name="behavior">The behavior instance to add.</param>
@@ -46,6 +54,14 @@ public interface IExecutionContext
     /// <returns>The execution context with the behavior added.</returns>
     IExecutionContext WithBehavior<TBehavior>()
         where TBehavior : class;
+
+    /// <summary>
+    /// Adds a behavior to this execution context using an open generic type definition.
+    /// This allows for more flexible behavior registration without requiring concrete type parameters.
+    /// </summary>
+    /// <param name="behaviorType">The open generic type definition of the behavior (e.g., typeof(TransactionBehavior&lt;,&gt;)).</param>
+    /// <returns>The execution context with the behavior added.</returns>
+    IExecutionContext WithBehavior(Type behaviorType);
 
     /// <summary>
     /// Adds a behavior instance to this execution context.
