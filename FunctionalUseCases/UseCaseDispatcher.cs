@@ -10,6 +10,11 @@ public class UseCaseDispatcher : IUseCaseDispatcher
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
+    /// Gets the service provider used for dependency injection.
+    /// </summary>
+    public IServiceProvider ServiceProvider => _serviceProvider;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="UseCaseDispatcher"/> class.
     /// </summary>
     /// <param name="serviceProvider">The service provider for resolving handlers.</param>

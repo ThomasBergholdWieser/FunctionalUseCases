@@ -6,6 +6,11 @@ namespace FunctionalUseCases;
 public interface IUseCaseDispatcher
 {
     /// <summary>
+    /// Gets the service provider used for dependency injection.
+    /// </summary>
+    IServiceProvider ServiceProvider { get; }
+
+    /// <summary>
     /// Executes a use case.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the use case.</typeparam>

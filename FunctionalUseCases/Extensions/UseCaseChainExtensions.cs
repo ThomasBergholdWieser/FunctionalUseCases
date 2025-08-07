@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace FunctionalUseCases.Extensions;
 
 /// <summary>
@@ -30,7 +32,8 @@ public static class UseCaseChainExtensions
             throw new ArgumentNullException(nameof(useCaseParameter));
         }
 
-        var chain = new UseCaseChain<TResult>(dispatcher, transactionManager, logger);
+        var serviceProvider = GetServiceProvider(dispatcher);
+        var chain = new UseCaseChain<TResult>(dispatcher, serviceProvider, transactionManager, logger);
         return chain.Then(useCaseParameter);
     }
 
@@ -51,6 +54,12 @@ public static class UseCaseChainExtensions
             throw new ArgumentNullException(nameof(dispatcher));
         }
 
-        return new UseCaseChain(dispatcher, transactionManager, logger);
+        var serviceProvider = GetServiceProvider(dispatcher);
+        return new UseCaseChain(dispatcher, serviceProvider, transactionManager, logger);
+    }
+
+    private static IServiceProvider GetServiceProvider(IUseCaseDispatcher dispatcher)
+    {
+        return dispatcher.ServiceProvider;
     }
 }
