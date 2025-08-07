@@ -1,5 +1,6 @@
 ﻿using FunctionalUseCases;
 using FunctionalUseCases.Sample;
+using FunctionalUseCases.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -56,8 +57,31 @@ else
 
 Console.WriteLine();
 
-// Example 3: Interactive example
-Console.WriteLine("Example 3: Interactive");
+// Example 3: Use Case Chaining
+Console.WriteLine("Example 3: Use Case Chaining");
+var chainResult = await dispatcher
+    .Chain(new SampleUseCase("Chain"))
+    .Then(new SampleUseCase("Example"))
+    .OnError(error =>
+    {
+        Console.WriteLine($"Chain error occurred: {error.Message}");
+        return Task.FromResult(Execution.Success("Chain error handled"));
+    })
+    .ExecuteAsync();
+
+if (chainResult.ExecutionSucceeded)
+{
+    Console.WriteLine($"✅ Chain Success: {chainResult.CheckedValue}");
+}
+else
+{
+    Console.WriteLine($"❌ Chain Error: {chainResult.Error?.Message}");
+}
+
+Console.WriteLine();
+
+// Example 4: Interactive example
+Console.WriteLine("Example 4: Interactive");
 Console.Write("Enter your name: ");
 var name = Console.ReadLine();
 
@@ -78,4 +102,5 @@ if (!string.IsNullOrEmpty(name))
 
 Console.WriteLine("\nNote: Execution behaviors (TimingBehavior, LoggingBehavior) are registered using");
 Console.WriteLine("services.AddScoped(typeof(IExecutionBehavior<,>), typeof(MyBehavior<,>)) for generic registration.");
+Console.WriteLine("Use case chaining allows sequential execution with fluent syntax and error handling.");
 Console.WriteLine("\nDone!");
