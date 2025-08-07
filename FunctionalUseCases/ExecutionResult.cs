@@ -1,7 +1,7 @@
 namespace FunctionalUseCases;
 
 public record ExecutionResult<T>(ExecutionError? Error = null) : ExecutionResult(Error)
-	where T : notnull
+    where T : notnull
 
 {
     protected T? Value { get; set; }
@@ -23,8 +23,8 @@ public record ExecutionResult<T>(ExecutionError? Error = null) : ExecutionResult
 
 public record ExecutionResult(ExecutionError? Error = null)
 {
-	public bool? NoLog { get; internal set; }
-	
+    public bool? NoLog { get; internal set; }
+
     public virtual bool ExecutionSucceeded => this.Error is null;
 
     public virtual bool ExecutionFailed => this.Error is not null;
@@ -36,19 +36,19 @@ public record ExecutionResult(ExecutionError? Error = null)
 
     public void ThrowIfFailed(string? exceptionMessage = null)
     {
-	    if (!this.ExecutionFailed)
-	    {
-		    return;
-	    }
+        if (!this.ExecutionFailed)
+        {
+            return;
+        }
 
-	    string BuildInternalMessage() =>
-		    this.Error is null
-			    ? "Unknown Error"
-			    : this.Error.Message;
+        string BuildInternalMessage() =>
+            this.Error is null
+                ? "Unknown Error"
+                : this.Error.Message;
 
-	    throw new ExecutionException(exceptionMessage is null
-		    ? BuildInternalMessage()
-		    : exceptionMessage + ": " + BuildInternalMessage());
+        throw new ExecutionException(exceptionMessage is null
+            ? BuildInternalMessage()
+            : exceptionMessage + ": " + BuildInternalMessage());
     }
 
     public static ExecutionResult operator +(ExecutionResult left, ExecutionResult right) =>

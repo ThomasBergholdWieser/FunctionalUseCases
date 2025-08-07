@@ -73,7 +73,7 @@ public class ExecutionResultExtensionsTests
         const string errorMessage = "Test error";
         var result = Execution.Failure(errorMessage);
         var mockLogger = new TestLogger();
-        
+
         // Log it first to set the Logged flag
         result.Log(mockLogger);
         mockLogger.LoggedMessages.Clear(); // Clear the log to test the second call

@@ -17,8 +17,8 @@ public static class UseCaseRegistrationExtensions
     /// <param name="assemblies">The assemblies to scan for UseCases. If null, scans the calling assembly.</param>
     /// <param name="serviceLifetime">The service lifetime for the use cases. Default is Transient.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddUseCases(this IServiceCollection services, 
-        Assembly[]? assemblies = null, 
+    public static IServiceCollection AddUseCases(this IServiceCollection services,
+        Assembly[]? assemblies = null,
         ServiceLifetime serviceLifetime = ServiceLifetime.Transient)
     {
         // Register the dispatcher
@@ -45,7 +45,7 @@ public static class UseCaseRegistrationExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="serviceLifetime">The service lifetime for the use cases. Default is Transient.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddUseCasesFromAssembly(this IServiceCollection services, 
+    public static IServiceCollection AddUseCasesFromAssembly(this IServiceCollection services,
         ServiceLifetime serviceLifetime = ServiceLifetime.Transient)
     {
         return services.AddUseCases(new[] { Assembly.GetCallingAssembly() }, serviceLifetime);
@@ -60,7 +60,7 @@ public static class UseCaseRegistrationExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="serviceLifetime">The service lifetime for the use cases. Default is Transient.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddUseCasesFromAssemblyContaining<T>(this IServiceCollection services, 
+    public static IServiceCollection AddUseCasesFromAssemblyContaining<T>(this IServiceCollection services,
         ServiceLifetime serviceLifetime = ServiceLifetime.Transient)
     {
         return services.AddUseCases(new[] { typeof(T).Assembly }, serviceLifetime);

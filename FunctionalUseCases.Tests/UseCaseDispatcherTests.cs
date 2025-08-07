@@ -19,7 +19,7 @@ public class UseCaseDispatcherTests
         var dispatcher = new UseCaseDispatcher(serviceProvider);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             dispatcher.ExecuteAsync<string>(null!));
     }
 

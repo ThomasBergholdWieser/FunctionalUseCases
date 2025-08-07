@@ -51,10 +51,10 @@ public class UseCaseRegistrationExtensionsTests
         services.AddUseCases(serviceLifetime: ServiceLifetime.Singleton);
 
         // Assert
-        var useCaseDescriptor = services.FirstOrDefault(s => 
-            s.ServiceType.IsGenericType && 
+        var useCaseDescriptor = services.FirstOrDefault(s =>
+            s.ServiceType.IsGenericType &&
             s.ServiceType.GetGenericTypeDefinition() == typeof(IUseCase<,>));
-        
+
         if (useCaseDescriptor != null)
         {
             Assert.Equal(ServiceLifetime.Singleton, useCaseDescriptor.Lifetime);
