@@ -166,7 +166,7 @@ public class OpenGenericBehaviorTests
         // Assert
         stringResult.ExecutionSucceeded.ShouldBeTrue();
         stringResult.CheckedValue.ShouldBe("TypeCapturing<TestUseCaseParameter,String>: Test Result");
-        
+
         intResult.ExecutionSucceeded.ShouldBeTrue();
         intResult.CheckedValue.ShouldBe(42);
     }
@@ -180,12 +180,12 @@ public class GenericTestBehavior<TUseCaseParameter, TResult> : IExecutionBehavio
     public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
     {
         var result = await next().ConfigureAwait(false);
-        
+
         if (result.ExecutionSucceeded && result.CheckedValue is string value)
         {
             return Execution.Success((TResult)(object)$"Behavior: {value}");
         }
-        
+
         return result;
     }
 }
@@ -197,12 +197,12 @@ public class SecondGenericTestBehavior<TUseCaseParameter, TResult> : IExecutionB
     public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
     {
         var result = await next().ConfigureAwait(false);
-        
+
         if (result.ExecutionSucceeded && result.CheckedValue is string value)
         {
             return Execution.Success((TResult)(object)$"SecondBehavior: {value}");
         }
-        
+
         return result;
     }
 }
@@ -214,14 +214,14 @@ public class TypeCapturingBehavior<TUseCaseParameter, TResult> : IExecutionBehav
     public async Task<ExecutionResult<TResult>> ExecuteAsync(TUseCaseParameter useCaseParameter, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken = default)
     {
         var result = await next().ConfigureAwait(false);
-        
+
         if (result.ExecutionSucceeded && result.CheckedValue is string value)
         {
             var parameterTypeName = typeof(TUseCaseParameter).Name;
             var resultTypeName = typeof(TResult).Name;
             return Execution.Success((TResult)(object)$"TypeCapturing<{parameterTypeName},{resultTypeName}>: {value}");
         }
-        
+
         return result;
     }
 }

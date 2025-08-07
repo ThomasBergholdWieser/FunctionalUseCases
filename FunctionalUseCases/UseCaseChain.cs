@@ -92,10 +92,10 @@ public class UseCaseChain<TResult>
 
         var newBehaviors = new List<object>(_perCallBehaviors) { behavior };
         var newChain = new UseCaseChain<TResult>(_dispatcher, _serviceProvider, _transactionManager, _logger, newBehaviors, _chainId);
-        
+
         // Copy existing steps
         newChain._steps.AddRange(_steps);
-        
+
         return newChain;
     }
 
@@ -187,7 +187,7 @@ public class UseCaseChain<TResult>
             }
 
             var result = await context.ExecuteInternalAsync(useCaseParameter, scope, cancellationToken);
-            
+
             if (result.ExecutionSucceeded)
             {
                 return (true, result.CheckedValue, null);
@@ -322,7 +322,7 @@ public class UseCaseChain<TResult>
                     _logger?.LogError(rollbackEx, "Failed to rollback transaction during cancellation");
                 }
             }
-            
+
             return Execution.Failure<TResult>("Chain execution was cancelled.");
         }
         catch (Exception ex)
@@ -451,10 +451,10 @@ public class UseCaseChain
 
         var newBehaviors = new List<object>(_perCallBehaviors) { behavior };
         var newChain = new UseCaseChain(_dispatcher, _serviceProvider, _transactionManager, _logger, newBehaviors, _chainId);
-        
+
         // Copy existing steps
         newChain._steps.AddRange(_steps);
-        
+
         return newChain;
     }
 

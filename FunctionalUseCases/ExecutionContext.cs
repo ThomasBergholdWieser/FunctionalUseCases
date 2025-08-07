@@ -171,7 +171,7 @@ internal class ExecutionContext<TResult> : IExecutionContext<TResult>
                     var scopedBehaviorType = typeof(IScopedExecutionBehavior<,>).MakeGenericType(useCaseParameterType, typeof(TResult));
                     if (scopedBehaviorType.IsInstanceOfType(behavior))
                     {
-                        var executeMethod = scopedBehaviorType.GetMethod("ExecuteAsync", 
+                        var executeMethod = scopedBehaviorType.GetMethod("ExecuteAsync",
                             new[] { useCaseParameterType, typeof(IExecutionScope), typeof(PipelineBehaviorDelegate<TResult>), typeof(CancellationToken) });
                         if (executeMethod != null)
                         {

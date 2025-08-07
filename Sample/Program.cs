@@ -90,7 +90,7 @@ try
     var transactionResult = await dispatcher
         .WithBehavior<TransactionBehavior<SampleUseCase, string>>()
         .ExecuteAsync(new SampleUseCase("Transaction"));
-        
+
     if (transactionResult.ExecutionSucceeded)
     {
         Console.WriteLine($"✅ Transaction Success: {transactionResult.CheckedValue}");
@@ -114,7 +114,7 @@ try
     var transactionResult = await dispatcher
         .WithBehavior(typeof(TransactionBehavior<,>))
         .ExecuteAsync(new SampleUseCase("TransactionGeneric"));
-        
+
     if (transactionResult.ExecutionSucceeded)
     {
         Console.WriteLine($"✅ Transaction Success (Open Generic): {transactionResult.CheckedValue}");
@@ -140,7 +140,7 @@ try
         .WithBehavior<TransactionBehavior<SampleUseCase, string>>()
         .Then(new SampleUseCase("Behavior"))
         .ExecuteAsync();
-        
+
     if (chainWithBehaviorResult.ExecutionSucceeded)
     {
         Console.WriteLine($"✅ Chain with Behavior Success: {chainWithBehaviorResult.CheckedValue}");
@@ -166,7 +166,7 @@ try
         .WithBehavior(typeof(TransactionBehavior<,>))
         .Then(new SampleUseCase("BehaviorGeneric"))
         .ExecuteAsync();
-        
+
     if (chainWithBehaviorResult.ExecutionSucceeded)
     {
         Console.WriteLine($"✅ Chain with Behavior Success (Open Generic): {chainWithBehaviorResult.CheckedValue}");

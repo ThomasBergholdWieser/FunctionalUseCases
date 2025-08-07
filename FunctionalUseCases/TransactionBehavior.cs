@@ -18,7 +18,7 @@ public class TransactionBehavior<TUseCaseParameter, TResult> : ScopedExecutionBe
 {
     private readonly ITransactionManager _transactionManager;
     private readonly ILogger<TransactionBehavior<TUseCaseParameter, TResult>> _logger;
-    
+
     // Static storage for chain transactions (shared across all instances)
     private static readonly ConcurrentDictionary<string, ITransaction> _chainTransactions = new();
 
@@ -103,12 +103,12 @@ public class TransactionBehavior<TUseCaseParameter, TResult> : ScopedExecutionBe
     private async Task<ExecutionResult<TResult>> ExecuteInChainAsync(TUseCaseParameter useCaseParameter, IExecutionScope scope, PipelineBehaviorDelegate<TResult> next, CancellationToken cancellationToken, string useCaseParameterName)
     {
         var chainId = scope.ChainId!;
-        
+
         if (scope.IsChainStart)
         {
             // Start transaction for the entire chain
             _logger.LogDebug("Starting transaction for use case chain: {ChainId}, use case: {UseCaseParameterName}", chainId, useCaseParameterName);
-            
+
             try
             {
                 var transaction = await _transactionManager.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
