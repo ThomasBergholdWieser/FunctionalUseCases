@@ -40,12 +40,7 @@ internal class ExecutionContext<TResult> : IExecutionContext<TResult>
         _perCallBehaviors = new List<object>(existingBehaviors);
     }
 
-    public IExecutionContext<TResult> WithBehavior<TBehavior>()
-        where TBehavior : class
-    {
-        var behavior = _serviceProvider.GetRequiredService<TBehavior>();
-        return WithBehavior(behavior);
-    }
+
 
     public IExecutionContext<TResult> WithBehavior(Type behaviorType)
     {
@@ -226,12 +221,7 @@ internal class ExecutionContext : IExecutionContext
         _perCallBehaviors = new List<object>(existingBehaviors);
     }
 
-    public IExecutionContext WithBehavior<TBehavior>()
-        where TBehavior : class
-    {
-        var behavior = _serviceProvider.GetRequiredService<TBehavior>();
-        return WithBehavior(behavior);
-    }
+
 
     public IExecutionContext WithBehavior(Type behaviorType)
     {

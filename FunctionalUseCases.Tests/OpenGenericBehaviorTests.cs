@@ -39,7 +39,7 @@ public class OpenGenericBehaviorTests
 
         // Act
         var result = await dispatcher
-            .WithBehavior<string>(typeof(GenericTestBehavior<,>))
+            .WithBehavior(typeof(GenericTestBehavior<,>))
             .ExecuteAsync(parameter);
 
         // Assert

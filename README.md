@@ -14,7 +14,7 @@ A complete .NET solution that implements functional processing of use cases usin
 - 🧪 **Testable**: Easy to unit test individual use cases with comprehensive error scenarios
 - 📦 **Enterprise-Ready**: Robust implementation with logging integration and cancellation support
 - 🔗 **Global Execution Behaviors**: Cross-cutting concerns like logging, validation, caching applied to all use case executions
-- ⚡ **Per-Call Execution Behaviors**: Fluent API for applying behaviors to specific use case executions or chains using `WithBehavior<T>()`
+- ⚡ **Per-Call Execution Behaviors**: Fluent API for applying behaviors to specific use case executions or chains using `WithBehavior(typeof(MyBehavior<,>))`
 - 🔄 **Use Case Chaining**: Fluent chain execution with result passing and chain-aware behavior support
 - 🏷️ **Chain-Aware Transaction Management**: Intelligent transaction handling that adapts based on execution context (single use case vs. chain)
 
@@ -455,24 +455,24 @@ In addition to global behaviors that apply to all use case executions, the libra
 The system now supports two distinct behavior application patterns:
 
 1. **Global Behaviors**: Registered with dependency injection and applied to ALL use case executions
-2. **Per-Call Behaviors**: Applied to specific executions using the `WithBehavior<T>()` fluent API
+2. **Per-Call Behaviors**: Applied to specific executions using the `WithBehavior()` fluent API with open generic types
 
 ### WithBehavior() Fluent API
 
-The `WithBehavior<T>()` method allows you to apply behaviors to specific use case executions:
+The `WithBehavior()` method allows you to apply behaviors to specific use case executions using open generic type definitions. This approach ensures behaviors remain cross-cutting concerns that work with any use case parameter and result types.
 
 #### Single Use Case with Behavior
 
 ```csharp
 // Apply a transaction behavior to a specific use case execution
 var result = await dispatcher
-    .WithBehavior<TransactionBehavior<MyUseCase, string>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .ExecuteAsync(new MyUseCase("data"));
 
 // Apply multiple behaviors to the same execution
 var result = await dispatcher
-    .WithBehavior<TransactionBehavior<MyUseCase, string>>()
-    .WithBehavior<ValidationBehavior<MyUseCase, string>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
+    .WithBehavior(typeof(ValidationBehavior<,>))
     .ExecuteAsync(new MyUseCase("data"));
 
 // Use behavior instances instead of types
@@ -488,7 +488,7 @@ var result = await dispatcher
 // Apply behavior to an entire use case chain
 var result = await dispatcher
     .StartWith(new FirstUseCase("initial"))
-    .WithBehavior<TransactionBehavior<FirstUseCase, string>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .Then(x => new SecondUseCase(x.Id, x.Property))
     .Then(x => new ThirdUseCase(x.ProcessedData))
     .ExecuteAsync();
@@ -496,8 +496,8 @@ var result = await dispatcher
 // Apply multiple behaviors to a chain
 var result = await dispatcher
     .StartWith(new GetUserUseCase(userId))
-    .WithBehavior<TransactionBehavior<GetUserUseCase, User>>()
-    .WithBehavior<ValidationBehavior<GetUserUseCase, User>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
+    .WithBehavior(typeof(ValidationBehavior<,>))
     .Then(user => new ValidateUserUseCase(user))
     .Then(user => new SendWelcomeEmailUseCase(user.Email, user.Name))
     .ExecuteAsync();
@@ -506,7 +506,7 @@ var result = await dispatcher
 var result = await dispatcher
     .StartWith(new FirstUseCase())
     .Then(x => new SecondUseCase(x.Id))
-    .WithBehavior<TransactionBehavior<SecondUseCase, ProcessedData>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .Then(x => new ThirdUseCase(x.ProcessedData))
     .ExecuteAsync();
 ```
@@ -526,14 +526,14 @@ The `TransactionBehavior<TUseCaseParameter, TResult>` is a sophisticated example
 ```csharp
 // Transaction per single use case
 var result = await dispatcher
-    .WithBehavior<TransactionBehavior<CreateOrderUseCase, Order>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .ExecuteAsync(new CreateOrderUseCase(orderData));
 // Creates transaction → executes use case → commits/rollbacks transaction
 
 // Transaction per entire chain
 var result = await dispatcher
     .StartWith(new CreateOrderUseCase(orderData))
-    .WithBehavior<TransactionBehavior<CreateOrderUseCase, Order>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .Then(order => new ReserveInventoryUseCase(order.Items))
     .Then(inventory => new ProcessPaymentUseCase(orderData.Payment))
     .Then(payment => new SendConfirmationEmailUseCase(order.CustomerEmail))
@@ -647,13 +647,13 @@ public interface IExecutionScope
 
 ### Behavior Registration for Per-Call Usage
 
-Per-call behaviors need to be registered in the dependency injection container so they can be resolved:
+Per-call behaviors are registered as open generic types and resolved at execution time based on the actual use case parameter and result types:
 
 ```csharp
-// Register behaviors that will be used with WithBehavior<T>()
-services.AddScoped<TransactionBehavior<CreateOrderUseCase, Order>>();
-services.AddScoped<ValidationBehavior<CreateOrderUseCase, Order>>();
-services.AddScoped<CachingBehavior<GetUserUseCase, User>>();
+// Register behaviors as open generics for per-call usage
+services.AddScoped(typeof(TransactionBehavior<,>));
+services.AddScoped(typeof(ValidationBehavior<,>));
+services.AddScoped(typeof(CachingBehavior<,>));
 
 // Register any dependencies they need
 services.AddScoped<ITransactionManager, EntityFrameworkTransactionManager>();
@@ -678,7 +678,7 @@ services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
 // Transaction behavior applied to entire order workflow
 var result = await dispatcher
     .StartWith(new ValidateOrderUseCase(orderRequest))
-    .WithBehavior<TransactionBehavior<ValidateOrderUseCase, ValidatedOrder>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .Then(order => new ReserveInventoryUseCase(order.Items))
     .Then(reservation => new ProcessPaymentUseCase(reservation.OrderId, orderRequest.Payment))
     .Then(payment => new CreateOrderUseCase(payment.OrderId, payment.Amount))
@@ -690,7 +690,7 @@ var result = await dispatcher
 ```csharp
 // Cache only expensive user profile queries
 var profile = await dispatcher
-    .WithBehavior<CachingBehavior<GetUserProfileUseCase, UserProfile>>()
+    .WithBehavior(typeof(CachingBehavior<,>))
     .ExecuteAsync(new GetUserProfileUseCase(userId));
 
 // Regular user operations don't use caching
@@ -702,8 +702,8 @@ var updateResult = await dispatcher
 ```csharp
 // Apply strict validation only to sensitive operations
 var result = await dispatcher
-    .WithBehavior<StrictValidationBehavior<DeleteAccountUseCase, bool>>()
-    .WithBehavior<AuditLogBehavior<DeleteAccountUseCase, bool>>()
+    .WithBehavior(typeof(StrictValidationBehavior<,>))
+    .WithBehavior(typeof(AuditLogBehavior<,>))
     .ExecuteAsync(new DeleteAccountUseCase(userId, confirmationToken));
 ```
 
@@ -771,7 +771,7 @@ Chains work seamlessly with both global and per-call behaviors:
 // Apply transaction behavior to entire chain
 var result = await dispatcher
     .StartWith(new BeginOrderUseCase(customerId))
-    .WithBehavior<TransactionBehavior<BeginOrderUseCase, Order>>()
+    .WithBehavior(typeof(TransactionBehavior<,>))
     .Then(order => new AddItemsUseCase(order.Id, items))
     .Then(order => new CalculateTotalUseCase(order))
     .Then(order => new ProcessPaymentUseCase(order.Total, paymentInfo))
@@ -852,12 +852,12 @@ services.AddUseCasesFromAssembly(ServiceLifetime.Scoped);
 services.AddScoped(typeof(IExecutionBehavior<,>), typeof(LoggingBehavior<,>));
 ```
 
-2. **Per-call behaviors** used with `WithBehavior<T>()` need to be registered for dependency injection resolution:
+2. **Per-call behaviors** used with `WithBehavior()` are registered as open generics:
 
 ```csharp
-// Register specific behaviors for per-call usage
-services.AddScoped<TransactionBehavior<CreateOrderUseCase, Order>>();
-services.AddScoped<ValidationBehavior<CreateUserUseCase, User>>();
+// Register open generic behaviors for per-call usage
+services.AddScoped(typeof(TransactionBehavior<,>));
+services.AddScoped(typeof(ValidationBehavior<,>));
 services.AddScoped<CachingBehavior<GetUserUseCase, User>>();
 ```
 

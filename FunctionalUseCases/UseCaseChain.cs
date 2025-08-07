@@ -43,18 +43,7 @@ public class UseCaseChain<TResult>
         _chainId = chainId;
     }
 
-    /// <summary>
-    /// Adds a behavior to this use case chain.
-    /// The behavior will be applied to all use cases in the chain.
-    /// </summary>
-    /// <typeparam name="TBehavior">The type of behavior to add.</typeparam>
-    /// <returns>A new chain with the behavior added.</returns>
-    public UseCaseChain<TResult> WithBehavior<TBehavior>()
-        where TBehavior : class
-    {
-        var behavior = _serviceProvider.GetRequiredService<TBehavior>();
-        return WithBehavior(behavior);
-    }
+
 
     /// <summary>
     /// Adds a behavior to this use case chain using an open generic type definition.
@@ -402,18 +391,7 @@ public class UseCaseChain
         _chainId = chainId;
     }
 
-    /// <summary>
-    /// Adds a behavior to this use case chain.
-    /// The behavior will be applied to all use cases in the chain.
-    /// </summary>
-    /// <typeparam name="TBehavior">The type of behavior to add.</typeparam>
-    /// <returns>A new chain with the behavior added.</returns>
-    public UseCaseChain WithBehavior<TBehavior>()
-        where TBehavior : class
-    {
-        var behavior = _serviceProvider.GetRequiredService<TBehavior>();
-        return WithBehavior(behavior);
-    }
+
 
     /// <summary>
     /// Adds a behavior to this use case chain using an open generic type definition.

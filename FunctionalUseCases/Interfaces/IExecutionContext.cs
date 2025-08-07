@@ -9,13 +9,7 @@ namespace FunctionalUseCases;
 public interface IExecutionContext<TResult>
     where TResult : notnull
 {
-    /// <summary>
-    /// Adds a behavior to this execution context.
-    /// </summary>
-    /// <typeparam name="TBehavior">The type of behavior to add.</typeparam>
-    /// <returns>The execution context with the behavior added.</returns>
-    IExecutionContext<TResult> WithBehavior<TBehavior>()
-        where TBehavior : class;
+
 
     /// <summary>
     /// Adds a behavior to this execution context using an open generic type definition.
@@ -47,13 +41,7 @@ public interface IExecutionContext<TResult>
 /// </summary>
 public interface IExecutionContext
 {
-    /// <summary>
-    /// Adds a behavior to this execution context.
-    /// </summary>
-    /// <typeparam name="TBehavior">The type of behavior to add.</typeparam>
-    /// <returns>The execution context with the behavior added.</returns>
-    IExecutionContext WithBehavior<TBehavior>()
-        where TBehavior : class;
+
 
     /// <summary>
     /// Adds a behavior to this execution context using an open generic type definition.
